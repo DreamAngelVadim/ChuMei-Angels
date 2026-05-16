@@ -24,7 +24,7 @@ class SileroTTS:
         # Настройки голосов
         self.VOICE_CONFIG = {
             "chuchu": {"speaker": "xenia", "rate": 1.0},
-            "mei": {"speaker": "baya", "rate": 1.0},
+            "mei": {"speaker": "baya", "rate": 0.7},
             "hana": {"speaker": "xenia", "rate": 1.18},
             "ki": {"speaker": "baya", "rate": 0.87},
             "simone": {"speaker": "baya", "rate": 0.95},

@@ -367,25 +367,35 @@ class ChuMei:
     
     def _parse_target(self, text):
         """
-        Определяет, к кому обращается пользователь.
-        
-        ВОЗВРАЩАЕТ:
-            target (str): 'chuchu', 'mei' или 'both'
-            clean_text (str): Текст без обращения
+        Определяет, к кому обращаются.
+        Возвращает: target (chuchu/mei/hana/ki/simone/both) и очищенный текст
         """
-        target = "chuchu"
+        target = "chuchu"  # по умолчанию Чучу
+        clean_text = text.strip()
         text_lower = text.lower()
-        for name in DUO_NAMES:
-            if text_lower.startswith(name):
-                if name in ["мэй", "мей", "mei", "may"]:
-                    target = "mei"
-                elif name in ["чучу", "chuchu"]:
-                    target = "chuchu"
-                else:
-                    target = "both"
-                text = re.sub(r'^' + re.escape(name) + r'\s*', '', text, flags=re.IGNORECASE).strip()
-                break
-        return target, text
+        
+        # Словарь обращений для каждой девочки
+        targets = {
+            "chuchu": ["чучу", "чу", "chuchu", "чу-чу"],
+            "mei": ["мэй", "мей", "mei", "may", "мея"],
+            "hana": ["хана", "hana", "ханна", "хана банни"],
+            "ki": ["ки", "ki", "potato", "потато", "potato godzilla"],
+            "simone": ["симона", "simone", "симонa", "simona", "миссис симонс"],
+            "both": ["девочки", "девчата", "сестрёнки", "девушки", "все девочки"]
+        }
+        
+        # Проверяем начало фразы (обращение + пробел или точное совпадение)
+        for target_type, names in targets.items():
+            for name in names:
+                if text_lower.startswith(name + " ") or text_lower == name:
+                    target = target_type
+                    # Убираем обращение из текста
+                    clean_text = re.sub(r'^' + re.escape(name) + r'\s*', '', text, flags=re.IGNORECASE).strip()
+                    print(f"🎯 Распознано обращение: {target_type} ({name})")  # для отладки
+                    return target, clean_text
+        
+        # Если обращения нет — возвращаем исходный текст и Чучу по умолчанию
+        return target, clean_text
     
     async def _play_response(self, response, target):
         """
