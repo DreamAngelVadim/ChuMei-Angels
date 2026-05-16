@@ -69,7 +69,7 @@ def clean_text(text):
 
 
 def convert_number_to_words(num):
-    """Преобразует число в слова (для TTS)"""
+    """Преобразует число в слова (поддержка до 9999)"""
     if num < 10:
         return ['ноль','один','два','три','четыре','пять','шесть','семь','восемь','девять'][num]
     elif num < 20:
@@ -83,32 +83,41 @@ def convert_number_to_words(num):
         u = convert_number_to_words(num % 10) if num % 10 != 0 else ''
         return f"{t} {u}".strip()
     elif num < 1000:
-        h = convert_number_to_words(num // 100) + " сто"
+        hundreds = ['','сто','двести','триста','четыреста','пятьсот','шестьсот','семьсот','восемьсот','девятьсот']
+        h = hundreds[num // 100]
         rest = convert_number_to_words(num % 100) if num % 100 != 0 else ''
         return f"{h} {rest}".strip()
+    elif num < 10000:
+        thousands = ['','одна тысяча','две тысячи','три тысячи','четыре тысячи','пять тысяч','шесть тысяч','семь тысяч','восемь тысяч','девять тысяч']
+        t = thousands[num // 1000]
+        rest = convert_number_to_words(num % 1000) if num % 1000 != 0 else ''
+        return f"{t} {rest}".strip()
     else:
         return str(num)
 
 
 def normalize_text_for_tts(text):
-    """Заменяет цифры на слова, английские буквы на русские (для лучшего произношения)"""
-    # Замена цифр на слова
-    digit_map = {
-        '0': 'ноль', '1': 'один', '2': 'два', '3': 'три', '4': 'четыре',
-        '5': 'пять', '6': 'шесть', '7': 'семь', '8': 'восемь', '9': 'девять'
-    }
+    """Заменяет все цифры на слова, английские буквы на русские"""
     
-    # Замена многозначных чисел
-    def replace_number(match):
+    # Сначала заменяем диапазоны типа "52-54"
+    text = re.sub(r'(\d+)-(\d+)', lambda m: f"{convert_number_to_words(int(m.group(1)))} {convert_number_to_words(int(m.group(2)))}", text)
+    
+    # Заменяем все числа (от 1 до 9999) в тексте, даже если они прилипли к словам
+    def replace_all_numbers(match):
         num = match.group(0)
         try:
             return convert_number_to_words(int(num))
         except:
             return num
     
-    text = re.sub(r'\b\d{2,}\b', replace_number, text)
+    # Ищем любые последовательности цифр (минимум 1 цифру)
+    text = re.sub(r'\b\d+\b', replace_all_numbers, text)
     
-    # Заменяем отдельные цифры
+    # Отдельные цифры, которые могли остаться
+    digit_map = {
+        '0': 'ноль', '1': 'один', '2': 'два', '3': 'три', '4': 'четыре',
+        '5': 'пять', '6': 'шесть', '7': 'семь', '8': 'восемь', '9': 'девять'
+    }
     for digit, word in digit_map.items():
         text = text.replace(digit, word)
     
@@ -123,6 +132,7 @@ def normalize_text_for_tts(text):
     
     for eng, rus in eng_to_rus.items():
         text = re.sub(r'\b' + eng + r'\b', rus, text, flags=re.IGNORECASE)
+        text = re.sub(r'([а-яА-Я])' + eng + r'([а-яА-Я])', r'\1' + rus + r'\2', text, flags=re.IGNORECASE)
     
     return text
 
@@ -483,17 +493,6 @@ class ChuMei:
         
         self.last_response_time = time.time()
     
-    class ChuMei:
-    # ... другие методы ...
-    
-    async def _process_normal(self, text):
-        # ...
-    
-    async def _handle_japanese_phrase(self, text_lower):
-        # ... твой код ...
-    
-    async def _speak(self, text, voice=None, duet=False):
-        # ...
     
     async def _handle_japanese_phrase(self, text_lower):
         """Обрабатывает команды типа 'скажи бака'"""
@@ -684,8 +683,12 @@ class ChuMei:
             
             # Idle диалоги если долго молчим (НО НЕ ВО ВРЕМЯ ИСТОРИИ)
             if not self.story_playing and time.time() - self.last_user_message_time > self.idle_chat_timeout:
-                print("\n💬 Вы молчите, поболтаем...")
-                await self._random_dialogue()
+                print("\n💬 Вы молчите, пробуем запустить цепочку...")
+                # Пытаемся запустить случайную цепочку
+                await self.try_random_chain()
+                # Если цепочка не запустилась — обычный диалог
+                if not self.is_processing:
+                    await self._random_dialogue()
                 self.last_user_message_time = time.time()
                 continue
             
@@ -941,6 +944,79 @@ class ChuMei:
         if self.link_chat:
             self.link_chat.stop()
         print("✅ Завершено")
+
+    # ══════════════════════════════════════════════════════════════════════════════════════════
+    # 3.9 СЛУЧАЙНЫЕ ЦЕПОЧКИ
+    # ══════════════════════════════════════════════════════════════════════════════════════════
+    
+    async def try_random_chain(self):
+        """Пытается запустить случайную цепочку (если условия подходят)"""
+        from knowledge.chains import DAY_CHAINS, NIGHT_CHAINS, RARE_CHAINS, CRIME_CHAIN
+        
+        # Не запускаем, если уже что-то идёт
+        if self.story_playing or self.is_processing:
+            return
+        
+        current_hour = datetime.now().hour
+        is_night = current_hour < 6 or current_hour > 21
+        is_day = not is_night
+        
+        # Выбираем тип цепочки
+        chain = None
+        
+        # Криминальная цепочка (5% шанс, только ночью)
+        if is_night and random.random() < 0.05:
+            chain = CRIME_CHAIN
+            print(f"🌙 Запущена криминальная цепочка: {chain['name']}")
+        
+        # Редкая цепочка (10% шанс)
+        elif random.random() < 0.1:
+            chain = random.choice(RARE_CHAINS)
+            print(f"✨ Запущена редкая цепочка: {chain['name']}")
+        
+        # Ночная цепочка (30% шанс)
+        elif is_night and random.random() < 0.3:
+            chain = random.choice(NIGHT_CHAINS)
+            print(f"🌙 Запущена ночная цепочка: {chain['name']}")
+        
+        # Дневная цепочка (40% шанс)
+        elif is_day and random.random() < 0.4:
+            chain = random.choice(DAY_CHAINS)
+            print(f"☀️ Запущена дневная цепочка: {chain['name']}")
+        
+        if chain:
+            await self._play_chain(chain)
+    
+    async def _play_chain(self, chain):
+        """Проигрывает цепочку шаг за шагом (50% шанс на каждый следующий шаг)"""
+        self.is_processing = True
+        steps = chain["steps"]
+        step_index = 0
+        
+        while step_index < len(steps) and self.running:
+            speaker, text = steps[step_index]
+            # Дополнительный параметр для "operator" (голос диктора)
+            if speaker == "operator":
+                await self.silero.speak(text, voice="mei")  # временно голосом Мэй
+            else:
+                # Определяем голос
+                if speaker in ["chuchu", "mei", "hana", "ki", "simone"]:
+                    await self.silero.speak(text, voice=speaker)
+                elif speaker == "both":
+                    await self.silero.speak_duet(text)
+                else:
+                    await self.silero.speak(text, voice="chuchu")
+            
+            step_index += 1
+            
+            # 50% шанс продолжить, если не конец цепочки
+            if step_index < len(steps) and random.random() < 0.5:
+                await asyncio.sleep(0.5)  # пауза перед следующим шагом
+            else:
+                break  # цепочка прервалась
+        
+        self.is_processing = False
+        print("✅ Цепочка завершена")
 
 
 # ══════════════════════════════════════════════════════════════════════════════════════════════
