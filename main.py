@@ -422,8 +422,18 @@ class ChuMei:
         """Воспроизводит ответ от ИИ с определением голоса по тегу или контексту"""
         await self.avatar.start_talking()
         
+        # Нормализуем латинские теги в кириллицу
+        response = response.replace("[chuchu]", "[чучу]").replace("[/chuchu]", "[/чучу]")
+        response = response.replace("[mei]", "[мэй]").replace("[/mei]", "[/мэй]")
+        response = response.replace("[hana]", "[хана]").replace("[/hana]", "[/хана]")
+        response = response.replace("[ki]", "[ки]").replace("[/ki]", "[/ки]")
+        response = response.replace("[simone]", "[симона]").replace("[/simone]", "[/симона]")
+        
+        # Также заменяем сокращённые
+        response = response.replace("[chu]", "[чучу]").replace("[/chu]", "[/чучу]")
+        response = response.replace("[sim]", "[симона]").replace("[/sim]", "[/симона]")
+        
         # Пробуем найти теги [имя]...[/имя] или [имя]...
-        # Поддерживаем: чучу, чу, мэй, мей, mei, хана, hana, ки, ki, симона, simone
         parts = re.findall(r'\[(чучу|чу|мэй|мей|mei|хана|hana|ки|ki|симона|simone)\](.*?)(?:\[/|$)', response, re.IGNORECASE | re.DOTALL)
         
         if parts:
