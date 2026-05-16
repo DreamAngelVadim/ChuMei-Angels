@@ -398,26 +398,46 @@ class ChuMei:
         return target, clean_text
     
     async def _play_response(self, response, target):
-        """
-        Воспроизводит ответ от ИИ (с поддержкой разметки [чучу]текст[/чучу]).
-        """
+        """Воспроизводит ответ от ИИ с определением голоса по тегу или контексту"""
         await self.avatar.start_talking()
-        parts = re.findall(r'\[(чучу|чу|мэй|мей|mei)\](.*?)(?:\[/|\[|$)', response, re.IGNORECASE | re.DOTALL)
+        
+        # Пробуем найти теги [имя]...[/имя] или [имя]...
+        # Поддерживаем: чучу, чу, мэй, мей, mei, хана, hana, ки, ki, симона, simone
+        parts = re.findall(r'\[(чучу|чу|мэй|мей|mei|хана|hana|ки|ki|симона|simone)\](.*?)(?:\[/|$)', response, re.IGNORECASE | re.DOTALL)
         
         if parts:
             for speaker, line in parts:
                 line = line.strip()
                 if line:
                     clean_line = transliterate(clean_text(line))
-                    if speaker.lower() in ["мэй", "мей", "mei"]:
+                    speaker_lower = speaker.lower()
+                    
+                    if speaker_lower in ["мэй", "мей", "mei"]:
                         await self.silero.speak(clean_line, voice="mei")
+                    elif speaker_lower in ["хана", "hana"]:
+                        await self.silero.speak(clean_line, voice="hana")
+                    elif speaker_lower in ["ки", "ki"]:
+                        await self.silero.speak(clean_line, voice="ki")
+                    elif speaker_lower in ["симона", "simone"]:
+                        await self.silero.speak(clean_line, voice="simone")
                     else:
                         await self.silero.speak(clean_line, voice="chuchu")
                     await asyncio.sleep(0.2)
         else:
+            # Если тегов нет — используем target и удаляем возможное имя из начала
             clean_response = transliterate(clean_text(response))
+            
+            # Убираем возможное "Чучу:" или "Мэй:" из начала
+            clean_response = re.sub(r'^(Чучу|Мэй|Хана|Ки|Симона):\s*', '', clean_response, flags=re.IGNORECASE)
+            
             if target == "mei":
                 await self.silero.speak(clean_response, voice="mei")
+            elif target == "hana":
+                await self.silero.speak(clean_response, voice="hana")
+            elif target == "ki":
+                await self.silero.speak(clean_response, voice="ki")
+            elif target == "simone":
+                await self.silero.speak(clean_response, voice="simone")
             elif target == "both":
                 await self.silero.speak_duet(clean_response)
             else:
@@ -454,12 +474,26 @@ class ChuMei:
         if self.user_name:
             prompt = f"Ты общаешься с пользователем по имени {self.user_name}. " + prompt
         
-        response = get_ai_response(user_message=clean_text, system_prompt=prompt, 
-                                   girl_name=target if target in ["chuchu", "mei"] else "chuchu")
+        # Разрешаем всех 5 девочек для ИИ
+        allowed_girls = ["chuchu", "mei", "hana", "ki", "simone", "both"]
+        girl_for_ai = target if target in allowed_girls else "chuchu"
+        response = get_ai_response(user_message=clean_text, system_prompt=prompt, girl_name=girl_for_ai)
         if response:
             await self._play_response(response, target)
         
         self.last_response_time = time.time()
+    
+    class ChuMei:
+    # ... другие методы ...
+    
+    async def _process_normal(self, text):
+        # ...
+    
+    async def _handle_japanese_phrase(self, text_lower):
+        # ... твой код ...
+    
+    async def _speak(self, text, voice=None, duet=False):
+        # ...
     
     async def _handle_japanese_phrase(self, text_lower):
         """Обрабатывает команды типа 'скажи бака'"""
@@ -874,7 +908,7 @@ class ChuMei:
         
         # Тест голосов Ханы и Ки
         print("🔊 Тест голосов Ханы и Ки...")
-        await self.silero.speak("Меня зовут Хана, я люблю дошик и деньги!", voice="hana")
+        await self.silero.speak("Привет дорогой, меня зовут Ха на, я люблю дошик и деньги!", voice="hana")
         await asyncio.sleep(1)
         await self.silero.speak("Здравствуйте... я Ки. Я... стесняюсь.", voice="ki")
         print("✅ Тест голосов завершён")
