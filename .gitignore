@@ -1,0 +1,40 @@
+# Environment
+.env
+venv/
+env/
+ENV/
+
+# Test files (might contain secrets)
+test_*.py
+*.test.py
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Audio/Video files
+*.mp3
+*.wav
+*.mp4
+*.avi
+# VRM files are now tracked via Git LFS
+output/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+chat.txt

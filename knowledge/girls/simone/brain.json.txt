@@ -1,0 +1,17 @@
+@'
+{
+  "name": "chuchu",
+  "created": "2026-05-15T22:30:00",
+  "learning_mode": false,
+  "facts": []
+}
+'@ | Out-File -FilePath knowledge\girls\chuchu\brain.json -Encoding UTF8
+
+@'
+{
+  "name": "mei",
+  "created": "2026-05-15T22:30:00",
+  "learning_mode": false,
+  "facts": []
+}
+'@ | Out-File -FilePath knowledge\girls\mei\brain.json -Encoding UTF8
