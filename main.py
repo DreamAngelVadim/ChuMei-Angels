@@ -127,6 +127,37 @@ def normalize_text_for_tts(text):
     return text
 
 
+# ═══════════════════════════════════════════════════════════════════════════════
+# ЯПОНСКИЕ ФРАЗЫ (человеческие триггеры)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+JP_TRIGGERS = {
+    # Чучу
+    ("скажи бака", "скажи baka"): ("chuchu", "Бака! Ты дурак, да? Хи-хи-хи!"),
+    ("скажи шиматта", "скажи shimatta"): ("chuchu", "Шиматта! Вот чёрт! Трусики жалко!"),
+    ("скажи урусай", "скажи urusai"): ("chuchu", "Урусай ва! Заткнись уже, надоел!"),
+    
+    # Мэй
+    ("скажи кора", "скажи kora"): ("mei", "Кора, яро? Эй ты, сволочь? Ара-ара..."),
+    ("скажи чикусё", "скажи chikusho"): ("mei", "Чикусё! Сука! Сейчас догоню!"),
+    ("скажи дамарэ", "скажи damare"): ("mei", "Дамарэ! Заткнись быстро! А то хуже будет!"),
+    
+    # Хана
+    ("скажи кусо", "скажи kuso"): ("hana", "Кусо! Дерьмо! Дошик кончился..."),
+    ("скажи удзай", "скажи uzai"): ("hana", "Удзай! Задолбал! Дай денег лучше!"),
+    ("скажи синдзимаэ", "скажи shinjimae"): ("hana", "Синдзимаэ! Убирайся к чёрту! Не мешай!"),
+    
+    # Ки
+    ("скажи бака ки", "скажи baka ki"): ("ki", "Бака... (краснеет, отворачивается) Не называйте меня так..."),
+    ("скажи чикусё ки", "скажи chikusho ki"): ("ki", "Чикусё... (тихо, всхлипывая) Я не плачу..."),
+    ("скажи докэ", "скажи doke"): ("ki", "Докэ... отойди, пожалуйста... мне неловко..."),
+    
+    # Симона
+    ("скажи бусу", "скажи busu"): ("simone", "Бусу. Уродина. (холодно) Не обижайся, это правда."),
+    ("скажи онорэ", "скажи onore"): ("simone", "Онорэ. Мразь. (ледяным тоном) Убирайся с глаз моих."),
+}
+
+
 # ══════════════════════════════════════════════════════════════════════════════════════════════
 # 3. ОСНОВНОЙ КЛАСС CHUMEI (вся логика бота)
 # ══════════════════════════════════════════════════════════════════════════════════════════════
@@ -385,6 +416,8 @@ class ChuMei:
         await self.avatar.stop_talking()
         print("✅ Ответ воспроизведён")
     
+    
+    
     async def _process_normal(self, text):
         """
         Обычный диалог через ИИ (llama3.1:8b).
@@ -417,6 +450,61 @@ class ChuMei:
             await self._play_response(response, target)
         
         self.last_response_time = time.time()
+    
+    async def _handle_japanese_phrase(self, text_lower):
+        """Обрабатывает команды типа 'скажи бака'"""
+        
+        # Чучу
+        if "скажи бака" in text_lower or "скажи baka" in text_lower:
+            await self._speak("Бака! Ты дурак, да? Хи-хи-хи!", voice="chuchu")
+            return True
+        
+        if "скажи шиматта" in text_lower or "скажи shimatta" in text_lower:
+            await self._speak("Шиматта! Вот чёрт! Трусики жалко!", voice="chuchu")
+            return True
+        
+        if "скажи урусай" in text_lower or "скажи urusai" in text_lower:
+            await self._speak("Урусай ва! Заткнись уже, надоел!", voice="chuchu")
+            return True
+        
+        # Мэй
+        if "скажи кора" in text_lower or "скажи kora" in text_lower:
+            await self._speak("Кора, яро? Эй ты, сволочь? Ара-ара...", voice="mei")
+            return True
+        
+        if "скажи чикусё" in text_lower or "скажи chikusho" in text_lower:
+            await self._speak("Чикусё! Сука! Сейчас догоню!", voice="mei")
+            return True
+        
+        if "скажи дамарэ" in text_lower or "скажи damare" in text_lower:
+            await self._speak("Дамарэ! Заткнись быстро! А то хуже будет!", voice="mei")
+            return True
+        
+        # Хана
+        if "скажи кусо" in text_lower or "скажи kuso" in text_lower:
+            await self._speak("Кусо! Дерьмо! Дошик кончился...", voice="hana")
+            return True
+        
+        if "скажи удзай" in text_lower or "скажи uzai" in text_lower:
+            await self._speak("Удзай! Задолбал! Дай денег лучше!", voice="hana")
+            return True
+        
+        # Ки
+        if "скажи докэ" in text_lower or "скажи doke" in text_lower:
+            await self._speak("Докэ... отойди, пожалуйста... мне неловко...", voice="ki")
+            return True
+        
+        if "скажи бака ки" in text_lower or "скажи baka ki" in text_lower:
+            await self._speak("Бака... (краснеет, отворачивается) Не называйте меня так...", voice="ki")
+            return True
+        
+        # Симона
+        if "скажи бусу" in text_lower or "скажи busu" in text_lower:
+            await self._speak("Бусу. Уродина. Холодно. Не обижайся, это правда.", voice="simone")
+            return True
+        
+        await self._speak("Не поняла, какую фразу сказать. Попробуй: скажи бака, скажи кора, скажи кусо, скажи докэ")
+        return True
     
     async def _handle_change_body(self, text_lower):
         """Обрабатывает команду 'измени тело' (грудь, бёдра, талия)"""
@@ -749,6 +837,15 @@ class ChuMei:
                     await self.stop_story()
                     self._reset_timers()
                     continue
+                
+                
+                # ----- 19. ЯПОНСКИЕ ФРАЗЫ (скажи бака, скажи кора и т.д.) -----
+                if any(word in text_lower for word in ["скажи бака", "скажи baka", "скажи кора", "скажи kora", "скажи кусо", "скажи kuso", "скажи чикусё", "скажи chikusho", "скажи удзай", "скажи uzai", "скажи докэ", "скажи doke"]):
+                    print("✅ ПЕРЕХВАТ: японская фраза")
+                    await self._handle_japanese_phrase(text_lower)
+                    self._reset_timers()
+                    continue
+                
                 
                 # ========== ОБЫЧНЫЙ ДИАЛОГ ==========
                 await self._process_normal(text)
