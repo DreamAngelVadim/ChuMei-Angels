@@ -695,10 +695,10 @@ class ChuMei:
             # Idle диалоги если долго молчим (НО НЕ ВО ВРЕМЯ ИСТОРИИ)
             if not self.story_playing and time.time() - self.last_user_message_time > self.idle_chat_timeout:
                 print("\n💬 Вы молчите, пробуем запустить цепочку...")
-                # Пытаемся запустить случайную цепочку
+                # Сначала пробуем запустить случайную цепочку (40% шанс)
                 await self.try_random_chain()
-                # Если цепочка не запустилась — обычный диалог
-                if not self.is_processing:
+                # Если цепочка не запустилась — случайный диалог (только 25% шанс)
+                if not self.is_processing and random.random() < 0.25:
                     await self._random_dialogue()
                 self.last_user_message_time = time.time()
                 continue
@@ -922,7 +922,7 @@ class ChuMei:
         
         # Тест голосов Ханы и Ки
         print("🔊 Тест голосов Ханы и Ки...")
-        await self.silero.speak("Привет дорогой, меня зовут Ха на, я люблю дошик и деньги!", voice="hana")
+        await self.silero.speak("Привет, меня зовут Ха на, я люблю дошик и деньги!", voice="hana")
         await asyncio.sleep(1)
         await self.silero.speak("Здравствуйте... я Ки. Я... стесняюсь.", voice="ki")
         print("✅ Тест голосов завершён")
