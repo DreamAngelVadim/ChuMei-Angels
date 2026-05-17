@@ -29,14 +29,21 @@ import numpy as np
 from datetime import datetime
 import threading
 
+# КОСТЫЛЬ ДЛЯ PYINSTALLER (исправляем проблему с sys.stderr)
+if hasattr(sys, 'stderr') and sys.stderr is None:
+    import io
+    sys.stderr = io.StringIO()
+if hasattr(sys, 'stdout') and sys.stdout is None:
+    sys.stdout = io.StringIO()
+
 # Мои модули
 import config
 from ai_brain import get_ai_response
-from avatar_video import AvatarVideo
 from microphone_input import listen
 from silero_tts import SileroTTS
 from text_utils import clean_text, convert_number_to_words, normalize_text_for_tts
 from ui_dashboard import ChuMeiUI
+from avatar_video import AvatarVideo
 
 # Временно отключаем replacements.py, если указано в config
 if hasattr(config, 'USE_REPLACEMENTS') and config.USE_REPLACEMENTS:
@@ -45,7 +52,7 @@ else:
     NUM_WORDS = {}
     GENDER_FIXES = {}
     REPLACEMENTS = {}
-
+    
 from transliterate import transliterate
 from link_chat import LinkChat
 from voice_id import get_voice_embedding, compare_voices
@@ -101,21 +108,21 @@ class ChuMei:
         print("=" * 60)
         
         # ----- ФЛАГИ СОСТОЯНИЯ -----
-        self.story_playing = False      # Идёт ли рассказ истории
-        self.story_chain = []           # Массив с историей
-        self.story_index = 0            # Текущая позиция в истории
-        self.story_total = 0            # Всего реплик в истории
-        self.censorship_mode = True     # Режим цензуры (True = скромно)
-        self.sleep_mode = False         # Режим сна
-        self.is_processing = False      # Бот занят обработкой
-        self.running = True             # Основной цикл активен
+        self.story_playing = False
+        self.story_chain = []
+        self.story_index = 0
+        self.story_total = 0
+        self.censorship_mode = True
+        self.sleep_mode = False
+        self.is_processing = False
+        self.running = True
         
         # ----- ОСНОВНЫЕ СИСТЕМЫ -----
-        self.avatar = AvatarVideo()     # Видео-аватар
-        self.link_chat = LinkChat()     # Текстовый чат
-        self.silero = SileroTTS()       # Голосовой синтез (5 девочек)
+        self.link_chat = LinkChat()
+        self.silero = SileroTTS()
         self.punctuator = RuPunctuator() if HAS_PUNCTUATOR else None
-        self.memory = Memory()          # Долговременная память (JSON)
+        self.memory = Memory()
+        self.avatar = AvatarVideo()
         
         # ----- ПАРАМЕТРЫ ПОЛЬЗОВАТЕЛЯ -----
         self.user_name = None
@@ -126,7 +133,7 @@ class ChuMei:
         # ----- ТАЙМЕРЫ -----
         self.last_response_time = 0
         self.last_user_message_time = time.time()
-        self.idle_chat_timeout = 30     # 30 секунд бездействия → случайный диалог
+        self.idle_chat_timeout = 30
         
         # ----- ПОТРЕБНОСТИ ДЕВОЧЕК -----
         self.hunger_chuchu = 100
@@ -149,9 +156,9 @@ class ChuMei:
         self.argue_cooldown = 300
         
         # ----- КОМАНДЫ И ТРИГГЕРЫ -----
-        self._init_search_sites()       # Поисковые сайты
-        self._init_app_commands()       # Запуск приложений
-        self._init_volume_commands()    # Управление громкостью
+        self._init_search_sites()
+        self._init_app_commands()
+        self._init_volume_commands()
         
         # ----- РАСПОЗНАВАНИЕ ГОЛОСА -----
         self.voice_enrolled = False
@@ -160,12 +167,12 @@ class ChuMei:
         self._load_voice_sample()
         
         # ----- РЕЖИМ СНА -----
-        self.bedtime_hour = 23          # 11 вечера
-        self.wakeup_hour = 8            # 8 утра
+        self.bedtime_hour = 23
+        self.wakeup_hour = 8
         self.all_girls = ["chuchu", "mei", "hana", "ki", "simone"]
     
     # ═══════════════════════════════════════════════════════════════════════════
-    # 3.2 ПРИВАТНЫЕ МЕТОДЫ (загрузка данных, инициализация подсистем)
+    # 3.2 ПРИВАТНЫЕ МЕТОДЫ
     # ═══════════════════════════════════════════════════════════════════════════
     
     def _load_user_name(self):
@@ -237,7 +244,9 @@ class ChuMei:
         text = normalize_text_for_tts(text)
         
         print(f"🔊 Говорит {voice or 'chuchu'}: {text[:100]}...")
-        await self.avatar.start_talking()
+        
+        if hasattr(self, 'avatar') and self.avatar.running:
+            self.avatar.start_talking()
         
         if duet:
             await self.silero.speak_duet(text)
@@ -246,7 +255,8 @@ class ChuMei:
         else:
             await self.silero.speak(text, voice=voice or "chuchu")
         
-        await self.avatar.stop_talking()
+        if hasattr(self, 'avatar') and self.avatar.running:
+            self.avatar.stop_talking()
     
     async def _play_scene(self, scene):
         for item in scene:
@@ -270,7 +280,7 @@ class ChuMei:
         await self._play_scene(scene)
     
     # ═══════════════════════════════════════════════════════════════════════════
-    # 3.4 МЕТОДЫ ДЛЯ РАБОТЫ С ИИ И ОБРАЩЕНИЯМИ
+    # 3.4 МЕТОДЫ ДЛЯ РАБОТЫ С ИИ
     # ═══════════════════════════════════════════════════════════════════════════
     
     def _parse_target(self, text):
@@ -297,8 +307,6 @@ class ChuMei:
         return target, clean_text
     
     async def _play_response(self, response, target):
-        await self.avatar.start_talking()
-        
         response = response.replace("[chuchu]", "[чучу]").replace("[/chuchu]", "[/чучу]")
         response = response.replace("[mei]", "[мэй]").replace("[/mei]", "[/мэй]")
         response = response.replace("[hana]", "[хана]").replace("[/hana]", "[/хана]")
@@ -307,6 +315,9 @@ class ChuMei:
         response = response.replace("[chu]", "[чучу]").replace("[/chu]", "[/чучу]")
         
         parts = re.findall(r'\[(чучу|чу|мэй|мей|mei|хана|hana|ки|ki|симона|simone)\](.*?)(?:\[/|$)', response, re.IGNORECASE | re.DOTALL)
+        
+        if hasattr(self, 'avatar') and self.avatar.running:
+            self.avatar.start_talking()
         
         if parts:
             for speaker, line in parts:
@@ -339,7 +350,9 @@ class ChuMei:
             else:
                 await self.silero.speak(clean_response, voice="chuchu")
         
-        await self.avatar.stop_talking()
+        if hasattr(self, 'avatar') and self.avatar.running:
+            self.avatar.stop_talking()
+        
         print("✅ Ответ воспроизведён")
     
     async def _process_normal(self, text):
@@ -404,7 +417,7 @@ class ChuMei:
             await self._speak("А что именно изменить? Скажи, например: измени тело, грудь 3, бёдра 90")
     
     # ═══════════════════════════════════════════════════════════════════════════
-    # 3.6 ИСТОРИЯ ВЕЧЕРИНКИ
+    # 3.6 ИСТОРИЯ
     # ═══════════════════════════════════════════════════════════════════════════
     
     async def tell_full_story(self):
@@ -420,7 +433,6 @@ class ChuMei:
     
     async def _play_story(self):
         self.is_processing = True
-        await self.avatar.start_talking()
         while self.story_playing and self.story_index < self.story_total:
             speaker, text = self.story_chain[self.story_index]
             self.story_index += 1
@@ -439,7 +451,6 @@ class ChuMei:
             else:
                 await self.silero.speak(text, voice="chuchu")
             await asyncio.sleep(0.3)
-        await self.avatar.stop_talking()
         self.story_playing = False
         self.is_processing = False
         await self._speak("Вот и вся история. Надеюсь, тебе понравилось!")
@@ -521,7 +532,6 @@ class ChuMei:
     # ═══════════════════════════════════════════════════════════════════════════
     
     async def microphone_loop(self):
-        """Главный цикл: слушает микрофон, распознаёт речь, выполняет команды"""
         print("\n🎤 Слушаю микрофон... Скажите что-нибудь!")
         print("   Обращения: Чучу, Мэй, девочки, девчата, сестрёнки")
         print("   Команды: режим обучения, запомни, напомни, свободна")
@@ -584,11 +594,13 @@ class ChuMei:
                 if any(word in text_lower for word in ["раскрепостись", "гости ушли", "мы одни"]):
                     if self.censorship_mode:
                         self.censorship_mode = False
-                        await self.avatar.start_talking()
+                        if hasattr(self, 'avatar') and self.avatar.running:
+                            self.avatar.start_talking()
                         await self.silero.speak("Уф, наконец-то! Я снова стала собой!")
                         await asyncio.sleep(0.2)
                         await self.silero.speak("О да! Теперь можно и без трусиков походить!", voice="mei")
-                        await self.avatar.stop_talking()
+                        if hasattr(self, 'avatar') and self.avatar.running:
+                            self.avatar.stop_talking()
                     else:
                         await self._speak("Мы уже раскрепощённые, Вадим!")
                     self._reset_timers()
@@ -597,9 +609,11 @@ class ChuMei:
                 if any(word in text_lower for word in ["цензура", "режим цензуры", "у нас гости"]):
                     if not self.censorship_mode:
                         self.censorship_mode = True
-                        await self.avatar.start_talking()
+                        if hasattr(self, 'avatar') and self.avatar.running:
+                            self.avatar.start_talking()
                         await self.silero.speak("Поняла, Вадим. Режим цензуры включён.")
-                        await self.avatar.stop_talking()
+                        if hasattr(self, 'avatar') and self.avatar.running:
+                            self.avatar.stop_talking()
                     else:
                         await self._speak("Цензура уже включена, Вадим!")
                     self._reset_timers()
@@ -729,11 +743,21 @@ class ChuMei:
         print("✅ Цепочка завершена")
     
     # ═══════════════════════════════════════════════════════════════════════════
-    # 3.11 ЗАПУСК И ОСТАНОВКА
+    # 3.11 ВИДЕО-АВАТАР
+    # ═══════════════════════════════════════════════════════════════════════════
+    
+    def _update_video(self):
+        """Обновляет видео-аватар через after() интерфейса"""
+        if self.running and hasattr(self, 'ui') and hasattr(self.ui, 'root') and self.ui.root.winfo_exists():
+            if hasattr(self, 'avatar') and self.avatar.running:
+                self.avatar.update_display(self.ui.video_label, width=350, height=280)
+            self.ui.root.after(50, self._update_video)
+    
+    # ═══════════════════════════════════════════════════════════════════════════
+    # 3.12 ЗАПУСК
     # ═══════════════════════════════════════════════════════════════════════════
     
     def run_microphone_sync(self):
-        """Запускает микрофон в синхронном режиме (для отдельного потока)"""
         asyncio.run(self.microphone_loop())
     
     async def start(self):
@@ -747,7 +771,6 @@ class ChuMei:
         await self.silero.speak("Здравствуйте... я Ки. Я... стесняюсь.", voice="ki")
         print("✅ Тест голосов завершён")
         
-        asyncio.create_task(self.avatar.start())
         self.link_chat.start()
         
         await asyncio.sleep(2)
@@ -759,8 +782,15 @@ class ChuMei:
         print(f"🧠 Модель ИИ: {config.OLLAMA_MODEL}")
         print("=" * 60 + "\n")
         
-        # Запускаем интерфейс в главном потоке
+        # Запускаем интерфейс
         self.ui = ChuMeiUI(self)
+        
+        # Запускаем видео-аватар
+        self.avatar.start()
+        self.avatar.set_label(self.ui.video_label)
+        
+        # Запускаем цикл обновления видео
+        self._update_video()
         
         # Запускаем микрофон в отдельном потоке
         mic_thread = threading.Thread(target=self.run_microphone_sync, daemon=True)
@@ -775,7 +805,7 @@ class ChuMei:
     async def cleanup(self):
         print("\n🧹 Очистка ресурсов...")
         self.running = False
-        if self.avatar:
+        if hasattr(self, 'avatar'):
             await self.avatar.stop()
         if self.link_chat:
             self.link_chat.stop()
