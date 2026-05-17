@@ -408,7 +408,7 @@ class ChuMei:
         print("🔊 Тест голосов Ханы и Ки...")
         
         # Тест Ханы (быстро)
-        await self.silero.speak("Меня зовут Хана, я люблю дошик и деньги!", voice="hana")
+        await self.silero.speak("Меня зовут Ха на, я люблю дошик и деньги!", voice="hana")
         await asyncio.sleep(1)
         
         # Тест Ки (медленно)
