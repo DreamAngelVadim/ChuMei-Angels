@@ -27,6 +27,7 @@ import subprocess
 import pygame
 import numpy as np
 from datetime import datetime
+import threading
 
 # Мои модули
 import config
@@ -35,6 +36,7 @@ from avatar_video import AvatarVideo
 from microphone_input import listen
 from silero_tts import SileroTTS
 from text_utils import clean_text, convert_number_to_words, normalize_text_for_tts
+from ui_dashboard import ChuMeiUI
 
 # Временно отключаем replacements.py, если указано в config
 if hasattr(config, 'USE_REPLACEMENTS') and config.USE_REPLACEMENTS:
@@ -85,14 +87,6 @@ JP_TRIGGERS = {
 
 # ══════════════════════════════════════════════════════════════════════════════════════════════
 # 3. ОСНОВНОЙ КЛАСС CHUMEI
-# ══════════════════════════════════════════════════════════════════════════════════════════════
-# 📌 ОТВЕЧАЕТ ЗА:
-#   - Инициализацию всех систем (голос, видео, память, чат)
-#   - Обработку голосовых команд и триггеров
-#   - Рассказывание историй (карусель без обрывов)
-#   - Случайные диалоги и цепочки в idle-режиме
-#   - Управление потребностями девочек (голод, туалет)
-#   - Режим сна (автоматический и по команде)
 # ══════════════════════════════════════════════════════════════════════════════════════════════
 
 class ChuMei:
@@ -175,7 +169,6 @@ class ChuMei:
     # ═══════════════════════════════════════════════════════════════════════════
     
     def _load_user_name(self):
-        """📛 Загружает имя пользователя из файла"""
         if os.path.exists(self.name_file):
             with open(self.name_file, 'r', encoding='utf-8') as f:
                 self.user_name = f.read().strip()
@@ -184,14 +177,12 @@ class ChuMei:
                     print(f"📛 Загружено имя: {self.user_name}")
     
     def _load_voice_sample(self):
-        """🔊 Загружает образец голоса для идентификации"""
         if os.path.exists(self.voice_file):
             self.voice_embedding = np.load(self.voice_file)
             self.voice_enrolled = True
             print("🔊 Образец голоса загружен")
     
     def _init_search_sites(self):
-        """🌐 Инициализация поисковых сайтов для команды 'открой ютуб'"""
         self.search_sites = {
             "ютуб": ["https://youtube.com", "https://www.youtube.com/results?search_query={query}"],
             "гугл": ["https://google.com", "https://www.google.com/search?q={query}"],
@@ -202,7 +193,6 @@ class ChuMei:
         self.auto_sites = {"видео": "ютуб", "музыку": "ютуб", "погоду": "гугл"}
     
     def _init_app_commands(self):
-        """💻 Инициализация команд для запуска приложений Windows"""
         self.app_commands = {
             "блокнот": "notepad.exe",
             "калькулятор": "calc.exe",
@@ -210,7 +200,6 @@ class ChuMei:
         }
     
     def _init_volume_commands(self):
-        """🔊 Инициализация команд для управления громкостью"""
         self.volume_commands = {
             "up": ["погромче", "громче", "громкость вверх"],
             "down": ["потише", "тише", "громкость вниз"],
@@ -219,7 +208,6 @@ class ChuMei:
         }
     
     def _reset_timers(self):
-        """🔄 Сбрасывает таймеры после обработки команды"""
         self.last_response_time = time.time()
         self.last_user_message_time = time.time()
         self.is_processing = False
@@ -229,21 +217,11 @@ class ChuMei:
     # ═══════════════════════════════════════════════════════════════════════════
     
     async def _speak(self, text, voice=None, duet=False):
-        """
-        🎤 Озвучивает текст одной из девочек.
-        
-        ПАРАМЕТРЫ:
-            text (str): Текст для озвучивания
-            voice (str): Имя девочки (chuchu, mei, hana, ki, simone)
-            duet (bool): Если True — говорят обе (Чучу и Мэй)
-        """
-        # Разрешаем всем девочкам говорить фразы про сон и пробуждение
         sleep_phrases = ["спокойной ночи", "доброе утро", "пора спать", "баю-бай", "спать", "укладываемся", "просыпаемся"]
         if self.sleep_mode and not any(phrase in text.lower() for phrase in sleep_phrases):
             print(f"😴 {voice or 'chuchu'} спит, не отвечает...")
             return
         
-        # Прямая замена чисел (самый надёжный способ)
         num_map = {
             "200": "двести", "100": "сто", "300": "триста", "400": "четыреста",
             "500": "пятьсот", "600": "шестьсот", "700": "семьсот", "800": "восемьсот",
@@ -255,10 +233,7 @@ class ChuMei:
         for num, word in num_map.items():
             text = text.replace(num, word)
         
-        # Замена чисел, прилипших к словам (200долларов → двестидолларов)
         text = re.sub(r'(\d{2,4})([а-яА-Я])', lambda m: num_map.get(m.group(1), m.group(1)) + m.group(2), text)
-        
-        # Нормализуем текст (цифры, английские буквы, названия)
         text = normalize_text_for_tts(text)
         
         print(f"🔊 Говорит {voice or 'chuchu'}: {text[:100]}...")
@@ -274,7 +249,6 @@ class ChuMei:
         await self.avatar.stop_talking()
     
     async def _play_scene(self, scene):
-        """🎬 Проигрывает сцену из нескольких реплик (для случайных диалогов)"""
         for item in scene:
             if isinstance(item, tuple):
                 speaker, line = item
@@ -287,7 +261,6 @@ class ChuMei:
                 await asyncio.sleep(0.05)
     
     async def _random_dialogue(self):
-        """💬 Запускает случайный диалог, когда пользователь молчит (idle)"""
         if self.story_playing or self.sleep_mode:
             return
         if self.censorship_mode:
@@ -301,13 +274,6 @@ class ChuMei:
     # ═══════════════════════════════════════════════════════════════════════════
     
     def _parse_target(self, text):
-        """
-        🎯 Определяет, к кому обращаются.
-        
-        ВОЗВРАЩАЕТ:
-            target (str): chuchu/mei/hana/ki/simone/both
-            clean_text (str): Текст без обращения
-        """
         target = "chuchu"
         clean_text = text.strip()
         text_lower = text.lower()
@@ -331,10 +297,8 @@ class ChuMei:
         return target, clean_text
     
     async def _play_response(self, response, target):
-        """🎭 Воспроизводит ответ от ИИ с определением голоса по тегу"""
         await self.avatar.start_talking()
         
-        # Нормализуем латинские теги в кириллицу
         response = response.replace("[chuchu]", "[чучу]").replace("[/chuchu]", "[/чучу]")
         response = response.replace("[mei]", "[мэй]").replace("[/mei]", "[/мэй]")
         response = response.replace("[hana]", "[хана]").replace("[/hana]", "[/хана]")
@@ -379,10 +343,6 @@ class ChuMei:
         print("✅ Ответ воспроизведён")
     
     async def _process_normal(self, text):
-        """
-        🧠 Обычный диалог через ИИ (llama3.1:8b).
-        Вызывается, когда не сработал ни один триггер.
-        """
         if self.story_playing or self.sleep_mode:
             print("⏸️ Занято (история или сон), диалог отложен.")
             return
@@ -392,7 +352,6 @@ class ChuMei:
         if not clean_text:
             return
         
-        # Команды выхода (только отдельные слова)
         words = clean_text.lower().split()
         if "выход" in words or "завершить" in words or (words == ["пока"]):
             await self._speak(f"До свидания, {self.user_name or 'Вадим'}! Мы будем ждать тебя!")
@@ -417,7 +376,6 @@ class ChuMei:
     # ═══════════════════════════════════════════════════════════════════════════
     
     async def _handle_japanese_phrase(self, text_lower):
-        """🗾 Обрабатывает команды типа 'скажи бака'"""
         for triggers, (voice, phrase) in JP_TRIGGERS.items():
             if any(trigger in text_lower for trigger in triggers):
                 await self._speak(phrase, voice=voice)
@@ -426,7 +384,6 @@ class ChuMei:
         return True
     
     async def _handle_change_body(self, text_lower):
-        """💃 Обрабатывает команду 'измени тело' (грудь, бёдра, талия)"""
         bust_match = re.search(r'грудь[:\s]*(\d+)', text_lower)
         hips_match = re.search(r'бёдра[:\s]*(\d+)', text_lower)
         waist_match = re.search(r'талия[:\s]*(\d+)', text_lower)
@@ -447,11 +404,10 @@ class ChuMei:
             await self._speak("А что именно изменить? Скажи, например: измени тело, грудь 3, бёдра 90")
     
     # ═══════════════════════════════════════════════════════════════════════════
-    # 3.6 ИСТОРИЯ ВЕЧЕРИНКИ (карусель без обрывов)
+    # 3.6 ИСТОРИЯ ВЕЧЕРИНКИ
     # ═══════════════════════════════════════════════════════════════════════════
     
     async def tell_full_story(self):
-        """📖 Запускает полную историю вечеринки с начала"""
         from knowledge.story_arc import FULL_STORY_ARC_FINAL
         if self.story_playing or self.sleep_mode:
             await self._speak("История уже рассказывается или мы спим.")
@@ -463,7 +419,6 @@ class ChuMei:
         asyncio.create_task(self._play_story())
     
     async def _play_story(self):
-        """🎬 Внутренний метод для проигрывания истории (непрерывно, до конца)"""
         self.is_processing = True
         await self.avatar.start_talking()
         while self.story_playing and self.story_index < self.story_total:
@@ -490,7 +445,6 @@ class ChuMei:
         await self._speak("Вот и вся история. Надеюсь, тебе понравилось!")
     
     async def continue_story(self):
-        """⏩ Продолжает прерванную историю с того же места"""
         if self.story_playing:
             await self._speak("История уже рассказывается.")
             return
@@ -502,7 +456,6 @@ class ChuMei:
             await self._speak("Нет активной истории. Скажи «расскажи историю».")
     
     async def stop_story(self):
-        """⏹️ Останавливает текущую историю"""
         if self.story_playing:
             self.story_playing = False
             self.is_processing = False
@@ -511,19 +464,16 @@ class ChuMei:
             await self._speak("История и не рассказывалась.")
     
     # ═══════════════════════════════════════════════════════════════════════════
-    # 3.7 ПОТРЕБНОСТИ (заглушки, будут расширены позже)
+    # 3.7 ПОТРЕБНОСТИ (заглушки)
     # ═══════════════════════════════════════════════════════════════════════════
     
     async def _update_hunger(self):
-        """🍜 Обновление уровня голода (заглушка)"""
         pass
     
     async def _update_toilet_needs(self):
-        """🚽 Обновление потребности в туалете (заглушка)"""
         pass
     
     async def _update_mood(self, who, change, reason=""):
-        """😊 Обновление настроения (заглушка)"""
         pass
     
     # ═══════════════════════════════════════════════════════════════════════════
@@ -531,7 +481,6 @@ class ChuMei:
     # ═══════════════════════════════════════════════════════════════════════════
     
     async def _check_sleep_time(self):
-        """😴 Проверяет время и включает/выключает режим сна"""
         current_hour = datetime.now().hour
         
         if current_hour >= self.bedtime_hour or current_hour < self.wakeup_hour:
@@ -568,11 +517,11 @@ class ChuMei:
             return False
     
     # ═══════════════════════════════════════════════════════════════════════════
-    # 3.8.1 МИКРОФОН
+    # 3.9 МИКРОФОН
     # ═══════════════════════════════════════════════════════════════════════════
     
     async def microphone_loop(self):
-        """🎤 Главный цикл: слушает микрофон, распознаёт речь, выполняет команды"""
+        """Главный цикл: слушает микрофон, распознаёт речь, выполняет команды"""
         print("\n🎤 Слушаю микрофон... Скажите что-нибудь!")
         print("   Обращения: Чучу, Мэй, девочки, девчата, сестрёнки")
         print("   Команды: режим обучения, запомни, напомни, свободна")
@@ -608,35 +557,30 @@ class ChuMei:
                 
                 # ----- ТРИГГЕРЫ -----
                 
-                # 1. Режим обучения для Чучу
                 if "чучу режим обучения" in text_lower or "чу режим обучения" in text_lower:
                     self.memory.set_learning_mode("chuchu", True)
                     await self._speak("Режим обучения для Чучу включён!")
                     self._reset_timers()
                     continue
                 
-                # 2. Режим обучения для Мэй
                 if "мэй режим обучения" in text_lower or "мея режим обучения" in text_lower:
                     self.memory.set_learning_mode("mei", True)
                     await self._speak("Режим обучения для Мэй включён!", voice="mei")
                     self._reset_timers()
                     continue
                 
-                # 3. Свободна для Чучу
                 if "свободна" in text_lower and ("чу" in text_lower or "чучу" in text_lower):
                     self.memory.set_learning_mode("chuchu", False)
                     await self._speak("Ура! Теперь я снова могу спорить!")
                     self._reset_timers()
                     continue
                 
-                # 4. Свободна для Мэй
                 if "свободна" in text_lower and ("мэй" in text_lower or "мея" in text_lower):
                     self.memory.set_learning_mode("mei", False)
                     await self._speak("Ура! Теперь я снова могу спорить! Ара-ара!", voice="mei")
                     self._reset_timers()
                     continue
                 
-                # 5. Раскрепостись (NSFW)
                 if any(word in text_lower for word in ["раскрепостись", "гости ушли", "мы одни"]):
                     if self.censorship_mode:
                         self.censorship_mode = False
@@ -650,7 +594,6 @@ class ChuMei:
                     self._reset_timers()
                     continue
                 
-                # 6. Цензура (SFW)
                 if any(word in text_lower for word in ["цензура", "режим цензуры", "у нас гости"]):
                     if not self.censorship_mode:
                         self.censorship_mode = True
@@ -662,21 +605,18 @@ class ChuMei:
                     self._reset_timers()
                     continue
                 
-                # 7. Перезагрузка компьютера
                 if "перезагрузи компьютер" in text_lower or "перезагрузка" in text_lower:
                     await self.silero.speak("Перезагружаю компьютер. Сейчас вернусь!")
                     os.system("shutdown /r /t 30")
                     self._reset_timers()
                     continue
                 
-                # 8. Выключение компьютера
                 if "выключи компьютер" in text_lower or "выключение" in text_lower:
                     await self.silero.speak("Выключаю компьютер. Сладких снов, Вадим!")
                     os.system("shutdown /s /t 30")
                     self._reset_timers()
                     continue
                 
-                # 9. Отмена перезагрузки
                 if any(word in text_lower for word in ["отмена", "отмени"]):
                     if "компьютер" in text_lower or "перезагрузк" in text_lower:
                         os.system("shutdown /a")
@@ -684,13 +624,11 @@ class ChuMei:
                         self._reset_timers()
                         continue
                 
-                # 10. Расскажи историю
                 if "расскажи историю" in text_lower or "про вечеринку" in text_lower:
                     await self.tell_full_story()
                     self._reset_timers()
                     continue
                 
-                # 11. Уложить спать
                 if "баю-бай" in text_lower or "укладываемся" in text_lower or ("спать" in text_lower and ("девочки" in text_lower or "все" in text_lower)):
                     print("✅ ПЕРЕХВАТ: уложить спать")
                     self.sleep_mode = True
@@ -709,13 +647,11 @@ class ChuMei:
                     self._reset_timers()
                     continue
                 
-                # 12. Японские фразы
                 if any(word in text_lower for word in ["скажи бака", "скажи baka", "скажи кора", "скажи kora", "скажи кусо", "скажи kuso", "скажи докэ", "скажи doke", "скажи бусу", "скажи busu"]):
                     await self._handle_japanese_phrase(text_lower)
                     self._reset_timers()
                     continue
                 
-                # 13. Стриптиз за деньги
                 if "стриптиз за деньги" in text_lower or "станцуем за деньги" in text_lower:
                     print("✅ ПЕРЕХВАТ: стриптиз за деньги")
                     from knowledge.chains import NIGHT_CHAINS
@@ -723,7 +659,6 @@ class ChuMei:
                     self._reset_timers()
                     continue
                 
-                # 14. Доброе утро (пробуждение)
                 if "доброе утро" in text_lower or "просыпайтесь" in text_lower or "подъём" in text_lower:
                     print("✅ ПЕРЕХВАТ: пробуждение")
                     if self.sleep_mode:
@@ -745,17 +680,15 @@ class ChuMei:
                     self._reset_timers()
                     continue
                 
-                # Обычный диалог через ИИ
                 await self._process_normal(text)
             
             await asyncio.sleep(0.1)
     
     # ═══════════════════════════════════════════════════════════════════════════
-    # 3.9 СЛУЧАЙНЫЕ ЦЕПОЧКИ
+    # 3.10 СЛУЧАЙНЫЕ ЦЕПОЧКИ
     # ═══════════════════════════════════════════════════════════════════════════
     
     async def try_random_chain(self):
-        """🎲 Пытается запустить случайную цепочку (если условия подходят)"""
         from knowledge.chains import DAY_CHAINS, NIGHT_CHAINS, RARE_CHAINS, CRIME_CHAIN
         if self.story_playing or self.is_processing or self.sleep_mode:
             return
@@ -775,7 +708,6 @@ class ChuMei:
             await self._play_chain(chain)
     
     async def _play_chain(self, chain):
-        """🎭 Проигрывает цепочку шаг за шагом (до конца, без прерываний)"""
         self.is_processing = True
         steps = chain["steps"]
         step_index = 0
@@ -792,16 +724,19 @@ class ChuMei:
                     await self.silero.speak(text, voice="chuchu")
             step_index += 1
             if step_index < len(steps):
-                await asyncio.sleep(0.5)  # Пауза между шагами
+                await asyncio.sleep(0.5)
         self.is_processing = False
         print("✅ Цепочка завершена")
     
     # ═══════════════════════════════════════════════════════════════════════════
-    # 3.10 ЗАПУСК И ОСТАНОВКА
+    # 3.11 ЗАПУСК И ОСТАНОВКА
     # ═══════════════════════════════════════════════════════════════════════════
     
+    def run_microphone_sync(self):
+        """Запускает микрофон в синхронном режиме (для отдельного потока)"""
+        asyncio.run(self.microphone_loop())
+    
     async def start(self):
-        """🚀 Запуск бота: инициализация, тест голосов, старт микрофона"""
         print("\n🚀 Запуск приложения...")
         pygame.mixer.init(frequency=22050, size=-16, channels=2, buffer=512)
         pygame.mixer.music.set_volume(0.7)
@@ -824,15 +759,20 @@ class ChuMei:
         print(f"🧠 Модель ИИ: {config.OLLAMA_MODEL}")
         print("=" * 60 + "\n")
         
-        await self.microphone_loop()
-        await self.cleanup()
+        # Запускаем интерфейс в главном потоке
+        self.ui = ChuMeiUI(self)
+        
+        # Запускаем микрофон в отдельном потоке
+        mic_thread = threading.Thread(target=self.run_microphone_sync, daemon=True)
+        mic_thread.start()
+        
+        # Запускаем главный цикл интерфейса
+        self.ui.run()
     
     async def _perform_intro_duet(self):
-        """🎤 Приветственное сообщение при запуске"""
         await self.silero.speak_duet("Привет, Вадим! Это Чучу и Мэй, твои виртуальные помощницы! Хи-хи-хи!")
     
     async def cleanup(self):
-        """🧹 Очистка ресурсов при завершении"""
         print("\n🧹 Очистка ресурсов...")
         self.running = False
         if self.avatar:
@@ -847,7 +787,6 @@ class ChuMei:
 # ══════════════════════════════════════════════════════════════════════════════════════════════
 
 async def main():
-    """🎮 Главная асинхронная функция"""
     app = ChuMei()
     await app.start()
 
