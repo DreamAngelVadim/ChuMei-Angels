@@ -1,12 +1,9 @@
-"""
-Video Avatar — простая работающая версия с сохранением пропорций
-"""
-
 import cv2
 import tkinter as tk
 from PIL import Image, ImageTk
 import os
 import random
+import asyncio
 
 
 class AvatarVideo:
@@ -17,6 +14,7 @@ class AvatarVideo:
         self.after_id = None
         self.idle_videos = []
         self.talking_videos = []
+        self.current_video_type = "idle"
     
     def set_label(self, label_widget):
         self.video_label = label_widget
@@ -36,21 +34,17 @@ class AvatarVideo:
                 self.idle_videos.append(path)
                 print(f"  ✅ Idle: {name}")
     
-    def start(self):
-        """Запускает видео (синхронно)"""
-        print("🎬 AvatarVideo.start() вызван")
-        if not self.video_label:
-            print("⚠️ Нет video_label!")
-            return
-        
-        if not self.idle_videos:
-            print("⚠️ Нет idle видео!")
+    async def start(self):
+        if not self.video_label or not self.idle_videos:
+            print("⚠️ Нет видео для проигрывания")
             return
         
         self.running = True
         self._load_video("idle")
         self._update_frame()
-        print("🎬 Видео запущено")
+        
+        while self.running:
+            await asyncio.sleep(0.03)
     
     def _load_video(self, video_type):
         if video_type == "talking" and self.talking_videos:
@@ -61,17 +55,11 @@ class AvatarVideo:
         if self.cap:
             self.cap.release()
         
-        print(f"🎬 Загружаем видео: {os.path.basename(path)}")
         self.cap = cv2.VideoCapture(path)
-        if self.cap.isOpened():
-            print(f"  ✅ Видео успешно открыто")
-        else:
-            print(f"  ❌ Ошибка открытия видео!")
+        print(f"🎬 Загружено видео: {os.path.basename(path)}")
     
     def _update_frame(self):
-        if not self.running:
-            return
-        if not self.cap:
+        if not self.running or not self.cap:
             return
         
         try:
@@ -89,53 +77,35 @@ class AvatarVideo:
         
         if ret:
             # Получаем размеры виджета
-            label_width = self.video_label.winfo_width()
-            label_height = self.video_label.winfo_height()
-            if label_width < 10:
-                label_width = 280
-            if label_height < 10:
-                label_height = 350
+            width = self.video_label.winfo_width()
+            height = self.video_label.winfo_height()
+            if width < 10:
+                width = 280
+            if height < 10:
+                height = 350
             
-            # Получаем размеры видео
-            video_height, video_width = frame.shape[:2]
-            
-            # Вычисляем пропорции
-            video_aspect = video_width / video_height
-            label_aspect = label_width / label_height
-            
-            # Подгоняем с сохранением пропорций
-            if video_aspect > label_aspect:
-                # Видео шире — подгоняем по ширине
-                new_width = label_width
-                new_height = int(label_width / video_aspect)
-            else:
-                # Видео выше — подгоняем по высоте
-                new_height = label_height
-                new_width = int(label_height * video_aspect)
-            
-            # Ресайзим кадр
-            frame_resized = cv2.resize(frame, (new_width, new_height))
+            frame_resized = cv2.resize(frame, (width, height))
             frame_rgb = cv2.cvtColor(frame_resized, cv2.COLOR_BGR2RGB)
             img = Image.fromarray(frame_rgb)
             imgtk = ImageTk.PhotoImage(image=img)
             
             self.video_label.imgtk = imgtk
-            self.video_label.config(image=imgtk, text="")
+            self.video_label.configure(image=imgtk, text="")
         
         if self.running:
             self.after_id = self.video_label.after(30, self._update_frame)
     
-    def start_talking(self):
+    async def start_talking(self):
         if self.talking_videos:
             self._load_video("talking")
             print("🎤 Аватар говорит")
     
-    def stop_talking(self):
+    async def stop_talking(self):
         if self.idle_videos:
             self._load_video("idle")
             print("🎤 Аватар замолк")
     
-    def stop(self):
+    async def stop(self):
         self.running = False
         if self.cap:
             self.cap.release()
