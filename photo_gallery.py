@@ -14,23 +14,23 @@ class GirlGallery:
     
     # Цветовая схема Windows 11 Dark
     COLORS = {
-        "bg_dark": "#1C1C1C",      # основной фон
-        "bg_light": "#2D2D2D",      # светлый фон для карточек
-        "bg_hover": "#3D3D3D",      # при наведении
-        "accent": "#0078D4",        # акцентный синий
-        "accent_hover": "#106EBE",  # акцент при наведении
-        "text_primary": "#FFFFFF",   # основной текст
-        "text_secondary": "#A0A0A0", # второстепенный текст
-        "border": "#404040",         # границы
-        "success": "#6B8C42",        # зелёный
-        "warning": "#C42B1C",        # красный
+        "bg_dark": "#1C1C1C",
+        "bg_light": "#2D2D2D",
+        "bg_hover": "#3D3D3D",
+        "accent": "#0078D4",
+        "accent_hover": "#106EBE",
+        "text_primary": "#FFFFFF",
+        "text_secondary": "#A0A0A0",
+        "border": "#404040",
+        "success": "#6B8C42",
+        "warning": "#C42B1C",
     }
     
     # Личные дела девочек
     PERSONAL_FILES = {
         "chuchu": {
             "name": "Чучу",
-            "full_name": "Чучу (ChuChu)",
+            "full_name": "Чучу",
             "age": "19 лет",
             "birthday": "14 февраля",
             "sign": "Водолей",
@@ -42,12 +42,12 @@ class GirlGallery:
             "personality": "Весёлая, энергичная, немного капризная, обожает внимание",
             "dream": "Стать известной косплей-моделью и объездить весь мир",
             "quote": "Бака! Ты дурак, да? Хи-хи-хи!",
-            "voice": "Xenia (Silero TTS)",
+            "voice": "Xenia",
             "color": "#FF69B4"
         },
         "mei": {
             "name": "Мэй",
-            "full_name": "Мэй Нгуен (Mei Nguyen)",
+            "full_name": "Мэй Нгуен",
             "age": "21 год",
             "birthday": "30 апреля",
             "sign": "Телец",
@@ -59,12 +59,12 @@ class GirlGallery:
             "personality": "Спокойная, рассудительная, заботливая, любит порядок",
             "dream": "Открыть свою мастерскую авторских украшений",
             "quote": "Ара-ара... У тебя золотые руки!",
-            "voice": "Baya (Silero TTS)",
+            "voice": "Baya",
             "color": "#98FB98"
         },
         "hana": {
             "name": "Хана",
-            "full_name": "Хана Банни (Hana Bunny)",
+            "full_name": "Хана Банни",
             "age": "20 лет",
             "birthday": "1 апреля",
             "sign": "Овен",
@@ -76,12 +76,12 @@ class GirlGallery:
             "personality": "Энергичная, жизнерадостная, немного наивная, обожает покушать",
             "dream": "Открыть свой ресторан лапши",
             "quote": "Банихоп-хоп! Дошик — это жизнь!",
-            "voice": "Hana (Silero TTS)",
+            "voice": "Hana",
             "color": "#FFD700"
         },
         "ki": {
             "name": "Ки",
-            "full_name": "Ки (Potato)",
+            "full_name": "Ки",
             "age": "18 лет",
             "birthday": "27 августа",
             "sign": "Дева",
@@ -93,12 +93,12 @@ class GirlGallery:
             "personality": "Стеснительная, тихая, застенчивая, очень добрая",
             "dream": "Нарисовать свою мангу",
             "quote": "Извините... я картошка...",
-            "voice": "Potato (Silero TTS)",
+            "voice": "Potato",
             "color": "#DDA0DD"
         },
         "simone": {
             "name": "Симона",
-            "full_name": "Симона Симонс (Simone Simons)",
+            "full_name": "Симона Симонс",
             "age": "24 года",
             "birthday": "17 января",
             "sign": "Козерог",
@@ -110,7 +110,7 @@ class GirlGallery:
             "personality": "Страстная, артистичная, вдохновляющая, харизматичная",
             "dream": "Покорить мировую сцену с Epica",
             "quote": "Музыка — это любовь!",
-            "voice": "Kseniya (Silero TTS)",
+            "voice": "Kseniya",
             "color": "#87CEEB"
         }
     }
@@ -124,13 +124,13 @@ class GirlGallery:
         self.slideshow_running = False
         self.slideshow_id = None
         
-        self.personal = self.PERSONAL_FILES.get(girl_name, {})
-        self.display_name = self.personal.get("name", girl_name.capitalize())
+        self.personal = self.PERSONAL_FILES.get(girl_name, self.PERSONAL_FILES["chuchu"])
+        self.display_name = self.personal.get("name", girl_name)
         
-        # Создаём окно в стиле Windows 11
+        # Создаём окно
         self.window = tk.Toplevel(parent)
-        self.window.title(f"📸 {self.display_name} — ChuMei Angels")
-        self.window.geometry("950x700")
+        self.window.title(f"ChuMei Angels — {self.display_name}")
+        self.window.geometry("900x700")
         self.window.configure(bg=self.COLORS["bg_dark"])
         
         # Убираем стандартные границы и добавляем свой заголовок
@@ -144,27 +144,26 @@ class GirlGallery:
         self.window.protocol("WM_DELETE_WINDOW", self.close)
     
     def setup_custom_titlebar(self):
-        """Создаёт кастомный заголовок в стиле Windows 11"""
+        """Создаёт кастомный заголовок"""
         self.titlebar = tk.Frame(self.window, bg=self.COLORS["bg_light"], height=32)
-        self.titlebar.pack(fill="x", side="top")
+        self.titlebar.pack(fill="x")
         self.titlebar.pack_propagate(False)
         
         # Иконка и заголовок
-        title_text = f"ChuMei Angels — {self.display_name}"
+        title_text = f"🌸 ChuMei Angels — {self.display_name} 🌸"
         title_label = tk.Label(
-            self.titlebar, 
+            self.titlebar,
             text=title_text,
-            font=("Segoe UI", 11),
             bg=self.COLORS["bg_light"],
-            fg=self.COLORS["text_primary"]
+            fg=self.COLORS["text_primary"],
+            font=("Segoe UI", 11, "bold")
         )
-        title_label.pack(side="left", padx=12, pady=6)
+        title_label.pack(side="left", padx=10, pady=5)
         
         # Кнопка закрытия
         close_btn = tk.Button(
             self.titlebar,
             text="✖",
-            font=("Segoe UI", 10),
             bg=self.COLORS["bg_light"],
             fg=self.COLORS["text_primary"],
             relief="flat",
@@ -173,7 +172,7 @@ class GirlGallery:
             cursor="hand2",
             command=self.close
         )
-        close_btn.pack(side="right", padx=8, pady=4)
+        close_btn.pack(side="right", padx=10, pady=3)
         
         # Возможность перетаскивать окно
         self.titlebar.bind("<Button-1>", self.start_move)
@@ -195,21 +194,14 @@ class GirlGallery:
     def setup_notebook(self):
         """Создаёт стилизованные вкладки"""
         style = ttk.Style()
-        style.theme_use('clam')
+        style.theme_use("clam")
         
-        # Стиль для вкладок
-        style.configure("Custom.TNotebook", background=self.COLORS["bg_dark"], borderwidth=0)
-        style.configure("Custom.TNotebook.Tab", 
-                       background=self.COLORS["bg_light"],
-                       foreground=self.COLORS["text_secondary"],
-                       padding=[20, 8],
-                       font=("Segoe UI", 10))
-        style.map("Custom.TNotebook.Tab",
-                 background=[("selected", self.COLORS["accent"])],
-                 foreground=[("selected", "white")])
+        style.configure("TNotebook", background=self.COLORS["bg_dark"])
+        style.configure("TNotebook.Tab", background=self.COLORS["bg_light"], foreground=self.COLORS["text_primary"])
+        style.map("TNotebook.Tab", background=[("selected", self.COLORS["accent"])])
         
-        self.notebook = ttk.Notebook(self.window, style="Custom.TNotebook")
-        self.notebook.pack(fill="both", expand=True, padx=10, pady=(0, 10))
+        self.notebook = ttk.Notebook(self.window, style="TNotebook")
+        self.notebook.pack(fill="both", expand=True, padx=10, pady=10)
         
         # Вкладка с фото
         self.setup_photo_tab()
@@ -224,24 +216,23 @@ class GirlGallery:
         
         # Верхняя панель с информацией
         info_frame = tk.Frame(self.photo_frame, bg=self.COLORS["bg_dark"])
-        info_frame.pack(fill="x", padx=20, pady=(15, 5))
+        info_frame.pack(fill="x", pady=10)
         
         self.counter_label = tk.Label(
             info_frame,
-            text=f"📷 Фото {self.current_index + 1} из {len(self.image_paths)}" if self.image_paths else "Нет фото",
-            font=("Segoe UI", 12),
+            text=f"📷 {self.current_index + 1}/{len(self.image_paths)}" if self.image_paths else "Нет фото",
+            font=("Segoe UI", 10),
             bg=self.COLORS["bg_dark"],
             fg=self.COLORS["text_secondary"]
         )
-        self.counter_label.pack(side="left")
+        self.counter_label.pack()
         
         # Панель управления
         control_frame = tk.Frame(self.photo_frame, bg=self.COLORS["bg_dark"])
-        control_frame.pack(fill="x", padx=20, pady=10)
+        control_frame.pack(pady=10)
         
-        # Стилизованные кнопки
         btn_style = {
-            "font": ("Segoe UI", 11),
+            "font": ("Segoe UI", 10),
             "bg": self.COLORS["bg_light"],
             "fg": self.COLORS["text_primary"],
             "relief": "flat",
@@ -250,53 +241,28 @@ class GirlGallery:
             "pady": 6
         }
         
-        self.prev_btn = tk.Button(
-            control_frame,
-            text="◀ Назад",
-            command=self.prev_image,
-            **btn_style
-        )
+        self.prev_btn = tk.Button(control_frame, text="◀ Предыдущее", command=self.prev_image, **btn_style)
         self.prev_btn.pack(side="left", padx=5)
-        self.prev_btn.bind("<Enter>", lambda e: self.prev_btn.configure(bg=self.COLORS["bg_hover"]))
-        self.prev_btn.bind("<Leave>", lambda e: self.prev_btn.configure(bg=self.COLORS["bg_light"]))
         
-        self.slideshow_btn = tk.Button(
-            control_frame,
-            text="▶ Слайд-шоу",
-            command=self.toggle_slideshow,
-            **btn_style
-        )
+        self.slideshow_btn = tk.Button(control_frame, text="▶ Слайд-шоу", command=self.toggle_slideshow, **btn_style)
         self.slideshow_btn.pack(side="left", padx=5)
-        self.slideshow_btn.bind("<Enter>", lambda e: self.slideshow_btn.configure(bg=self.COLORS["bg_hover"]))
-        self.slideshow_btn.bind("<Leave>", lambda e: self.slideshow_btn.configure(bg=self.COLORS["bg_light"]))
         
-        self.next_btn = tk.Button(
-            control_frame,
-            text="Вперед ▶",
-            command=self.next_image,
-            **btn_style
-        )
+        self.next_btn = tk.Button(control_frame, text="Следующее ▶", command=self.next_image, **btn_style)
         self.next_btn.pack(side="left", padx=5)
-        self.next_btn.bind("<Enter>", lambda e: self.next_btn.configure(bg=self.COLORS["bg_hover"]))
-        self.next_btn.bind("<Leave>", lambda e: self.next_btn.configure(bg=self.COLORS["bg_light"]))
         
         # Область для фото
         self.image_container = tk.Frame(self.photo_frame, bg=self.COLORS["bg_dark"])
-        self.image_container.pack(fill="both", expand=True, padx=20, pady=10)
+        self.image_container.pack(fill="both", expand=True, pady=10)
         
-        self.image_label = tk.Label(
-            self.image_container,
-            bg=self.COLORS["bg_dark"],
-            cursor="hand2"
-        )
+        self.image_label = tk.Label(self.image_container, bg=self.COLORS["bg_dark"])
         self.image_label.pack(expand=True)
-        self.image_label.bind("<Button-1>", self.zoom_image)
+        self.image_label.bind("<Double-Button-1>", self.zoom_image)
         
         # Загружаем первое фото
         if self.image_paths:
-            self.load_image()
+            self.load_image(0)
         else:
-            self.image_label.config(text="📸 Нет фото", font=("Segoe UI", 16), fg=self.COLORS["text_secondary"])
+            self.image_label.config(text="📭 Нет фотографий", fg=self.COLORS["text_secondary"])
     
     def setup_profile_tab(self):
         """Вкладка с личным делом"""
@@ -306,8 +272,7 @@ class GirlGallery:
         if not self.personal:
             no_data = tk.Label(
                 self.profile_frame,
-                text="Информация о персонаже в разработке",
-                font=("Segoe UI", 14),
+                text="Нет данных",
                 bg=self.COLORS["bg_dark"],
                 fg=self.COLORS["text_secondary"]
             )
@@ -316,15 +281,10 @@ class GirlGallery:
         
         # Canvas для скроллинга
         canvas = tk.Canvas(self.profile_frame, bg=self.COLORS["bg_dark"], highlightthickness=0)
-        scrollbar = tk.Scrollbar(self.profile_frame, orient="vertical", command=canvas.yview, 
-                                 bg=self.COLORS["bg_light"], troughcolor=self.COLORS["bg_dark"])
+        scrollbar = tk.Scrollbar(self.profile_frame, orient="vertical", command=canvas.yview)
         scrollable_frame = tk.Frame(canvas, bg=self.COLORS["bg_dark"])
         
-        scrollable_frame.bind(
-            "<Configure>",
-            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
-        )
-        
+        scrollable_frame.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
         canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
         canvas.configure(yscrollcommand=scrollbar.set)
         
@@ -335,13 +295,12 @@ class GirlGallery:
         color = self.personal.get("color", self.COLORS["accent"])
         
         header_frame = tk.Frame(scrollable_frame, bg=self.COLORS["bg_dark"])
-        header_frame.pack(fill="x", pady=(20, 10))
+        header_frame.pack(fill="x", pady=20)
         
-        # Заголовок с именем
         name_label = tk.Label(
             header_frame,
-            text=f"📋 {self.personal.get('name', '')}",
-            font=("Segoe UI", 22, "bold"),
+            text=f"✨ {self.personal.get('name', '')} ✨",
+            font=("Segoe UI", 24, "bold"),
             bg=self.COLORS["bg_dark"],
             fg=color
         )
@@ -350,19 +309,19 @@ class GirlGallery:
         # Полное имя
         tk.Label(
             header_frame,
-            text=self.personal.get("full_name", "—"),
+            text=self.personal.get("full_name", ""),
             font=("Segoe UI", 12),
             bg=self.COLORS["bg_dark"],
             fg=self.COLORS["text_secondary"]
         ).pack()
         
         # Разделитель
-        separator = tk.Frame(scrollable_frame, height=2, bg=self.COLORS["border"])
-        separator.pack(fill="x", padx=40, pady=15)
+        separator = tk.Frame(scrollable_frame, bg=self.COLORS["border"], height=2)
+        separator.pack(fill="x", pady=10)
         
-        # Основная информация
+        # Основная информация - в 3 колонки
         info_frame = tk.Frame(scrollable_frame, bg=self.COLORS["bg_dark"])
-        info_frame.pack(fill="x", padx=40, pady=5)
+        info_frame.pack(fill="x", pady=10)
         
         # Возраст, день рождения, знак
         self._add_info_card(info_frame, "🎂 Возраст", self.personal.get("age", "—"))
@@ -371,26 +330,26 @@ class GirlGallery:
         
         # Параметры
         params_frame = tk.Frame(scrollable_frame, bg=self.COLORS["bg_dark"])
-        params_frame.pack(fill="x", padx=40, pady=5)
+        params_frame.pack(fill="x", pady=10)
         
         self._add_info_card(params_frame, "📏 Рост", self.personal.get("height", "—"))
         self._add_info_card(params_frame, "⚖️ Вес", self.personal.get("weight", "—"))
         
         # Разделитель
-        separator2 = tk.Frame(scrollable_frame, height=2, bg=self.COLORS["border"])
-        separator2.pack(fill="x", padx=40, pady=15)
+        separator2 = tk.Frame(scrollable_frame, bg=self.COLORS["border"], height=2)
+        separator2.pack(fill="x", pady=10)
         
         # Хобби, интересы, характер
-        self._add_section(scrollable_frame, "🎯 Хобби", self.personal.get("hobby", "—"))
+        self._add_section(scrollable_frame, "🎨 Хобби", self.personal.get("hobby", "—"))
         self._add_section(scrollable_frame, "❤️ Любит", self.personal.get("likes", "—"))
         self._add_section(scrollable_frame, "💔 Не любит", self.personal.get("dislikes", "—"))
-        self._add_section(scrollable_frame, "🎭 Характер", self.personal.get("personality", "—"))
-        self._add_section(scrollable_frame, "✨ Мечта", self.personal.get("dream", "—"))
+        self._add_section(scrollable_frame, "😊 Характер", self.personal.get("personality", "—"))
+        self._add_section(scrollable_frame, "💭 Мечта", self.personal.get("dream", "—"))
         
         # Любимая фраза
         phrase = self.personal.get("quote", "—")
-        quote_frame = tk.Frame(scrollable_frame, bg=self.COLORS["bg_light"], relief="flat", bd=1)
-        quote_frame.pack(fill="x", padx=40, pady=15)
+        quote_frame = tk.Frame(scrollable_frame, bg=self.COLORS["bg_dark"])
+        quote_frame.pack(fill="x", pady=10)
         
         tk.Label(
             quote_frame,
@@ -398,32 +357,34 @@ class GirlGallery:
             font=("Segoe UI", 11, "italic"),
             bg=self.COLORS["bg_light"],
             fg=color,
-            wraplength=700
-        ).pack(pady=15, padx=20)
+            wraplength=700,
+            padx=20,
+            pady=10
+        ).pack(fill="x")
         
         # Голос
         voice_frame = tk.Frame(scrollable_frame, bg=self.COLORS["bg_dark"])
-        voice_frame.pack(fill="x", padx=40, pady=10)
+        voice_frame.pack(fill="x", pady=10)
         
         tk.Label(
             voice_frame,
-            text="🎤 Голос:",
-            font=("Segoe UI", 11, "bold"),
+            text="🎤 Голос",
+            font=("Segoe UI", 12, "bold"),
             bg=self.COLORS["bg_dark"],
             fg=self.COLORS["text_primary"]
-        ).pack(side="left")
+        ).pack()
         tk.Label(
             voice_frame,
             text=self.personal.get("voice", "—"),
-            font=("Segoe UI", 11),
+            font=("Segoe UI", 10),
             bg=self.COLORS["bg_dark"],
             fg=self.COLORS["text_secondary"]
-        ).pack(side="left", padx=10)
+        ).pack()
     
     def _add_info_card(self, parent, label, value):
         """Добавляет карточку с информацией"""
-        card = tk.Frame(parent, bg=self.COLORS["bg_light"], relief="flat", bd=0)
-        card.pack(side="left", expand=True, fill="x", padx=5, pady=5)
+        card = tk.Frame(parent, bg=self.COLORS["bg_light"], relief="flat", bd=1)
+        card.pack(side="left", expand=True, fill="both", padx=5, pady=5)
         
         tk.Label(
             card,
@@ -431,19 +392,19 @@ class GirlGallery:
             font=("Segoe UI", 10),
             bg=self.COLORS["bg_light"],
             fg=self.COLORS["text_secondary"]
-        ).pack(pady=(8, 0))
+        ).pack(pady=(10, 5))
         tk.Label(
             card,
             text=value,
-            font=("Segoe UI", 13, "bold"),
+            font=("Segoe UI", 12, "bold"),
             bg=self.COLORS["bg_light"],
             fg=self.COLORS["text_primary"]
-        ).pack(pady=(0, 8))
+        ).pack(pady=(0, 10))
     
     def _add_section(self, parent, title, content):
         """Добавляет секцию с заголовком и содержимым"""
         frame = tk.Frame(parent, bg=self.COLORS["bg_dark"])
-        frame.pack(fill="x", padx=40, pady=8)
+        frame.pack(fill="x", pady=10)
         
         # Заголовок
         title_frame = tk.Frame(frame, bg=self.COLORS["bg_dark"])
@@ -452,7 +413,7 @@ class GirlGallery:
         tk.Label(
             title_frame,
             text=title,
-            font=("Segoe UI", 13, "bold"),
+            font=("Segoe UI", 12, "bold"),
             bg=self.COLORS["bg_dark"],
             fg=self.COLORS["accent"]
         ).pack(anchor="w")
@@ -461,12 +422,12 @@ class GirlGallery:
         tk.Label(
             frame,
             text=content,
-            font=("Segoe UI", 11),
+            font=("Segoe UI", 10),
             bg=self.COLORS["bg_dark"],
             fg=self.COLORS["text_primary"],
             wraplength=750,
             justify="left"
-        ).pack(anchor="w", padx=15, pady=(5, 0))
+        ).pack(anchor="w", pady=(5, 0))
     
     def center_window(self):
         self.window.update_idletasks()
@@ -474,32 +435,32 @@ class GirlGallery:
         height = self.window.winfo_height()
         x = (self.window.winfo_screenwidth() // 2) - (width // 2)
         y = (self.window.winfo_screenheight() // 2) - (height // 2)
-        self.window.geometry(f'{width}x{height}+{x}+{y}')
+        self.window.geometry(f"{width}x{height}+{x}+{y}")
     
-    def load_image(self):
+    def load_image(self, index):
         if not self.image_paths:
             return
-        
+        self.current_index = index
         path = self.image_paths[self.current_index]
         try:
             img = Image.open(path)
-            img.thumbnail((650, 500), Image.Resampling.LANCZOS)
+            img.thumbnail((600, 500), Image.Resampling.LANCZOS)
             photo = ImageTk.PhotoImage(img)
             self.image_label.configure(image=photo, text="")
             self.image_label.image = photo
-            self.counter_label.configure(text=f"📷 Фото {self.current_index + 1} из {len(self.image_paths)}")
+            self.counter_label.configure(text=f"📷 {self.current_index + 1}/{len(self.image_paths)}")
         except Exception as e:
-            self.image_label.configure(text=f"Ошибка загрузки: {e}", image="")
+            self.image_label.configure(text=f"⚠️ Ошибка загрузки: {e}", fg=self.COLORS["warning"])
     
     def prev_image(self):
         if self.image_paths:
             self.current_index = (self.current_index - 1) % len(self.image_paths)
-            self.load_image()
+            self.load_image(self.current_index)
     
     def next_image(self):
         if self.image_paths:
             self.current_index = (self.current_index + 1) % len(self.image_paths)
-            self.load_image()
+            self.load_image(self.current_index)
     
     def zoom_image(self, event=None):
         if not self.image_paths:
@@ -509,13 +470,14 @@ class GirlGallery:
         try:
             img = Image.open(path)
             zoom = tk.Toplevel(self.window)
-            zoom.title("Просмотр фото — ChuMei Angels")
+            zoom.title("Увеличенное фото")
             zoom.configure(bg=self.COLORS["bg_dark"])
             
             screen_width = zoom.winfo_screenwidth()
             screen_height = zoom.winfo_screenheight()
+            max_w, max_h = screen_width - 100, screen_height - 100
             
-            img.thumbnail((screen_width - 100, screen_height - 100), Image.Resampling.LANCZOS)
+            img.thumbnail((max_w, max_h), Image.Resampling.LANCZOS)
             photo = ImageTk.PhotoImage(img)
             
             label = tk.Label(zoom, image=photo, bg=self.COLORS["bg_dark"])
@@ -524,20 +486,21 @@ class GirlGallery:
             
             close_btn = tk.Button(
                 zoom,
-                text="Закрыть",
-                font=("Segoe UI", 11),
+                text="✖ Закрыть",
+                command=zoom.destroy,
                 bg=self.COLORS["accent"],
                 fg="white",
                 relief="flat",
                 cursor="hand2",
-                command=zoom.destroy
+                padx=15,
+                pady=5
             )
             close_btn.pack(pady=10)
             
             zoom.update_idletasks()
             w, h = zoom.winfo_width(), zoom.winfo_height()
-            x = (screen_width - w) // 2
-            y = (screen_height - h) // 2
+            x = (zoom.winfo_screenwidth() // 2) - (w // 2)
+            y = (zoom.winfo_screenheight() // 2) - (h // 2)
             zoom.geometry(f"+{x}+{y}")
         except Exception as e:
             messagebox.showerror("Ошибка", f"Не удалось открыть фото: {e}")
@@ -550,12 +513,12 @@ class GirlGallery:
     
     def start_slideshow(self):
         self.slideshow_running = True
-        self.slideshow_btn.configure(text="⏸ Стоп", bg=self.COLORS["warning"])
+        self.slideshow_btn.configure(text="⏸ Стоп")
         self._slideshow_step()
     
     def stop_slideshow(self):
         self.slideshow_running = False
-        self.slideshow_btn.configure(text="▶ Слайд-шоу", bg=self.COLORS["bg_light"])
+        self.slideshow_btn.configure(text="▶ Слайд-шоу")
         if self.slideshow_id:
             self.window.after_cancel(self.slideshow_id)
             self.slideshow_id = None
@@ -564,6 +527,10 @@ class GirlGallery:
         if self.slideshow_running:
             self.next_image()
             self.slideshow_id = self.window.after(3000, self._slideshow_step)
+    
+    def show(self):
+        """Показывает окно"""
+        self.window.deiconify()
     
     def close(self):
         self.stop_slideshow()

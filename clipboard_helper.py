@@ -2,7 +2,7 @@
 ╔══════════════════════════════════════════════════════════════════════════════╗
 ║                         CLIPBOARD HELPER FOR CHUMEI ANGELS                   ║
 ║                                                                              ║
-║   Работа с буфером обмена через ctypes (без внешних зависимостей)           ║
+║   Работа с буфером обмена через ctypes            ║
 ║   Поддерживает: копирование, вставку, вырезание текста                       ║
 ╚══════════════════════════════════════════════════════════════════════════════╝
 """
@@ -18,158 +18,158 @@ CF_UNICODETEXT = 13
 GMEM_MOVEABLE = 0x0002
 
 
-def _get_clipboard_win32():
+def _get_clipboard_win32:
     """Получает текст из буфера обмена Windows через ctypes"""
     try:
         user32 = ctypes.windll.user32
         kernel32 = ctypes.windll.kernel32
         
-        if not user32.OpenClipboard(0):
+        if not user32.OpenClipboard:
             return ""
         
         try:
-            h_data = user32.GetClipboardData(CF_UNICODETEXT)
+            h_data = user32.GetClipboardData
             if not h_data:
                 return ""
             
-            p_text = kernel32.GlobalLock(h_data)
+            p_text = kernel32.GlobalLock
             if not p_text:
                 return ""
             
             try:
-                text = ctypes.wstring_at(p_text)
+                text = ctypes.wstring_at
                 return text
             finally:
-                kernel32.GlobalUnlock(h_data)
+                kernel32.GlobalUnlock
         finally:
-            user32.CloseClipboard()
+            user32.CloseClipboard
     except Exception as e:
-        print(f"⚠️ Ошибка чтения буфера обмена: {e}")
+        print
         return ""
 
 
-def _set_clipboard_win32(text):
+def _set_clipboard_win32:
     """Устанавливает текст в буфер обмена Windows через ctypes"""
     try:
         user32 = ctypes.windll.user32
         kernel32 = ctypes.windll.kernel32
         
-        if not user32.OpenClipboard(0):
+        if not user32.OpenClipboard:
             return False
         
         try:
-            user32.EmptyClipboard()
+            user32.EmptyClipboard
             
             # Выделяем память для текста
-            h_global = kernel32.GlobalAlloc(GMEM_MOVEABLE, (len(text) + 1) * 2)
+            h_global = kernel32.GlobalAlloc + 1) * 2)
             if not h_global:
                 return False
             
-            p_text = kernel32.GlobalLock(h_global)
+            p_text = kernel32.GlobalLock
             if not p_text:
-                kernel32.GlobalFree(h_global)
+                kernel32.GlobalFree
                 return False
             
             try:
-                ctypes.memmove(p_text, text.encode('utf-16le'), (len(text) + 1) * 2)
+                ctypes.memmove,  + 1) * 2)
             finally:
-                kernel32.GlobalUnlock(h_global)
+                kernel32.GlobalUnlock
             
-            user32.SetClipboardData(CF_UNICODETEXT, h_global)
+            user32.SetClipboardData
             return True
         finally:
-            user32.CloseClipboard()
+            user32.CloseClipboard
     except Exception as e:
-        print(f"⚠️ Ошибка записи в буфер обмена: {e}")
+        print
         return False
 
 
-# ========== РЕЗЕРВНЫЕ МЕТОДЫ (через tkinter) ==========
+# ========== РЕЗЕРВНЫЕ МЕТОДЫ  ==========
 
-def _get_clipboard_tk():
-    """Получает текст из буфера обмена через tkinter (резервный метод)"""
+def _get_clipboard_tk:
+    """Получает текст из буфера обмена через tkinter """
     try:
-        root = tk.Tk()
-        root.withdraw()
-        text = root.clipboard_get()
-        root.destroy()
+        root = tk.Tk
+        root.withdraw
+        text = root.clipboard_get
+        root.destroy
         return text
     except Exception:
         return ""
 
 
-def _set_clipboard_tk(text):
-    """Устанавливает текст в буфер обмена через tkinter (резервный метод)"""
+def _set_clipboard_tk:
+    """Устанавливает текст в буфер обмена через tkinter """
     try:
-        root = tk.Tk()
-        root.withdraw()
-        root.clipboard_clear()
-        root.clipboard_append(text)
-        root.update()
-        root.destroy()
+        root = tk.Tk
+        root.withdraw
+        root.clipboard_clear
+        root.clipboard_append
+        root.update
+        root.destroy
         return True
     except Exception:
         return False
 
 
-# ========== ОСНОВНЫЕ ФУНКЦИИ (автоматический выбор метода) ==========
+# ========== ОСНОВНЫЕ ФУНКЦИИ  ==========
 
-def get_clipboard_text():
+def get_clipboard_text:
     """
     Получает текст из буфера обмена.
-    Сначала пробует Windows API (быстрее), затем tkinter.
+    Сначала пробует Windows API , затем tkinter.
     """
     try:
         # Пробуем Windows API
-        text = _get_clipboard_win32()
+        text = _get_clipboard_win32
         if text:
             return text
     except Exception:
         pass
     
     # Резервный метод
-    return _get_clipboard_tk()
+    return _get_clipboard_tk
 
 
-def set_clipboard_text(text):
+def set_clipboard_text:
     """
     Устанавливает текст в буфер обмена.
-    Сначала пробует Windows API (быстрее), затем tkinter.
+    Сначала пробует Windows API , затем tkinter.
     """
     if not text:
         return False
     
     try:
         # Пробуем Windows API
-        if _set_clipboard_win32(text):
+        if _set_clipboard_win32:
             return True
     except Exception:
         pass
     
     # Резервный метод
-    return _set_clipboard_tk(text)
+    return _set_clipboard_tk
 
 
-def clear_clipboard():
+def clear_clipboard:
     """Очищает буфер обмена"""
-    set_clipboard_text("")
+    set_clipboard_text
 
 
 # ========== ТЕСТИРОВАНИЕ ==========
 
 if __name__ == "__main__":
-    print("🧪 Тестирование clipboard_helper\n")
+    print
     
     # Тест 1: Копирование
     test_text = "Привет, Чучу! ❤️"
-    print(f"📝 Копируем: {test_text}")
-    set_clipboard_text(test_text)
+    print
+    set_clipboard_text
     
     # Тест 2: Вставка
-    result = get_clipboard_text()
-    print(f"📋 Вставляем: {result}")
+    result = get_clipboard_text
+    print
     
     if result == test_text:
-        print("✅ Тест пройден!")
+        print
     else:
-        print("❌ Тест не пройден")
+        print

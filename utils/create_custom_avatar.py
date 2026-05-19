@@ -6,16 +6,16 @@ import numpy as np
 from pathlib import Path
 import sys
 
-sys.path.insert(0, str(Path(__file__).parent.parent))
+sys.path.insert.parent.parent))
 import config
 
 
-def create_avatar(style="anime", hair_color="purple", eye_color="purple"):
+def create_avatar:
     """
     Create custom avatar with specified style
     
     Args:
-        style: Style of avatar ('anime', 'realistic', 'cute')
+        style: Style of avatar 
         hair_color: Hair color name
         eye_color: Eye color name
     """
@@ -23,51 +23,51 @@ def create_avatar(style="anime", hair_color="purple", eye_color="purple"):
     
     # Color mappings
     hair_colors = {
-        "purple": (120, 70, 180),
-        "pink": (180, 120, 255),
-        "blue": (200, 150, 100),
-        "red": (80, 80, 200),
-        "blonde": (100, 200, 255),
-        "black": (30, 30, 30),
-        "white": (230, 230, 230),
-        "green": (150, 200, 100)
+        "purple": ,
+        "pink": ,
+        "blue": ,
+        "red": ,
+        "blonde": ,
+        "black": ,
+        "white": ,
+        "green": 
     }
     
     eye_colors = {
-        "purple": (100, 50, 150),
-        "blue": (200, 100, 50),
-        "green": (100, 150, 50),
-        "brown": (50, 80, 120),
-        "red": (50, 50, 200),
-        "pink": (150, 100, 255)
+        "purple": ,
+        "blue": ,
+        "green": ,
+        "brown": ,
+        "red": ,
+        "pink": 
     }
     
-    hair = hair_colors.get(hair_color.lower(), hair_colors["purple"])
-    eyes = eye_colors.get(eye_color.lower(), eye_colors["purple"])
+    hair = hair_colors.get, hair_colors["purple"])
+    eyes = eye_colors.get, eye_colors["purple"])
     
-    print(f"Creating avatar: style={style}, hair={hair_color}, eyes={eye_color}")
+    print
     
     # Create idle image
-    idle_img = np.zeros((height, width, 3), dtype=np.uint8)
+    idle_img = np.zeros, dtype=np.uint8)
     
     # Gradient background
-    for i in range(height):
+    for i in range:
         intensity = i / height
         if style == "anime":
             # Purple to pink gradient
-            r = int(180 + intensity * 75)
-            g = int(120 - intensity * 50)
-            b = int(200 - intensity * 50)
+            r = int
+            g = int
+            b = int
         elif style == "realistic":
             # Darker, more realistic background
-            r = int(40 + intensity * 60)
-            g = int(30 + intensity * 50)
-            b = int(50 + intensity * 60)
+            r = int
+            g = int
+            b = int
         else:  # cute
             # Pastel colors
-            r = int(220 + intensity * 35)
-            g = int(200 + intensity * 35)
-            b = int(230 + intensity * 25)
+            r = int
+            g = int
+            b = int
         
         idle_img[i, :] = [b, g, r]
     
@@ -75,36 +75,36 @@ def create_avatar(style="anime", hair_color="purple", eye_color="purple"):
     face_radius = 200
     
     # Draw face
-    skin_tone = (200, 180, 255) if style == "anime" else (180, 160, 220)
-    cv2.circle(idle_img, (center_x, center_y), face_radius, skin_tone, -1)
-    cv2.circle(idle_img, (center_x, center_y), face_radius, (150, 120, 200), 3)
+    skin_tone =  if style == "anime" else 
+    cv2.circle, face_radius, skin_tone, -1)
+    cv2.circle, face_radius, , 3)
     
     # Draw hair based on style
     if style == "anime":
         # Anime-style long hair
-        cv2.ellipse(idle_img, (center_x, center_y - 80), (220, 180), 0, 180, 360, hair, -1)
-        cv2.ellipse(idle_img, (center_x - 150, center_y), (50, 200), 20, 0, 360, hair, -1)
-        cv2.ellipse(idle_img, (center_x + 150, center_y), (50, 200), -20, 0, 360, hair, -1)
+        cv2.ellipse, , 0, 180, 360, hair, -1)
+        cv2.ellipse, , 20, 0, 360, hair, -1)
+        cv2.ellipse, , -20, 0, 360, hair, -1)
         
         # Hair highlights
-        highlight = tuple(min(c + 50, 255) for c in hair)
-        cv2.ellipse(idle_img, (center_x - 50, center_y - 100), (40, 80), 20, 0, 180, highlight, -1)
+        highlight = tuple for c in hair)
+        cv2.ellipse, , 20, 0, 180, highlight, -1)
         
     elif style == "realistic":
         # More realistic hair
-        cv2.ellipse(idle_img, (center_x, center_y - 60), (200, 160), 0, 180, 360, hair, -1)
-        cv2.ellipse(idle_img, (center_x - 130, center_y + 20), (60, 180), 15, 0, 360, hair, -1)
-        cv2.ellipse(idle_img, (center_x + 130, center_y + 20), (60, 180), -15, 0, 360, hair, -1)
+        cv2.ellipse, , 0, 180, 360, hair, -1)
+        cv2.ellipse, , 15, 0, 360, hair, -1)
+        cv2.ellipse, , -15, 0, 360, hair, -1)
         
     else:  # cute
         # Cute short hair with bangs
-        cv2.ellipse(idle_img, (center_x, center_y - 70), (200, 150), 0, 180, 360, hair, -1)
-        cv2.ellipse(idle_img, (center_x - 100, center_y), (70, 150), 20, 0, 360, hair, -1)
-        cv2.ellipse(idle_img, (center_x + 100, center_y), (70, 150), -20, 0, 360, hair, -1)
+        cv2.ellipse, , 0, 180, 360, hair, -1)
+        cv2.ellipse, , 20, 0, 360, hair, -1)
+        cv2.ellipse, , -20, 0, 360, hair, -1)
         
         # Cute hair accessories
-        cv2.circle(idle_img, (center_x - 120, center_y - 80), 20, (150, 200, 255), -1)
-        cv2.circle(idle_img, (center_x + 120, center_y - 80), 20, (150, 200, 255), -1)
+        cv2.circle, 20, , -1)
+        cv2.circle, 20, , -1)
     
     # Draw eyes
     eye_y = center_y - 40
@@ -113,93 +113,94 @@ def create_avatar(style="anime", hair_color="purple", eye_color="purple"):
     
     if style == "anime":
         # Large anime eyes
-        cv2.ellipse(idle_img, (left_eye_x, eye_y), (30, 40), 0, 0, 360, (255, 255, 255), -1)
-        cv2.ellipse(idle_img, (right_eye_x, eye_y), (30, 40), 0, 0, 360, (255, 255, 255), -1)
-        cv2.circle(idle_img, (left_eye_x, eye_y + 5), 20, eyes, -1)
-        cv2.circle(idle_img, (right_eye_x, eye_y + 5), 20, eyes, -1)
-        cv2.circle(idle_img, (left_eye_x - 8, eye_y - 2), 8, (255, 255, 255), -1)
-        cv2.circle(idle_img, (right_eye_x - 8, eye_y - 2), 8, (255, 255, 255), -1)
+        cv2.ellipse, , 0, 0, 360, , -1)
+        cv2.ellipse, , 0, 0, 360, , -1)
+        cv2.circle, 20, eyes, -1)
+        cv2.circle, 20, eyes, -1)
+        cv2.circle, 8, , -1)
+        cv2.circle, 8, , -1)
         
         # Eyelashes
-        cv2.ellipse(idle_img, (left_eye_x, eye_y - 35), (32, 15), 0, 0, 180, (50, 30, 80), 2)
-        cv2.ellipse(idle_img, (right_eye_x, eye_y - 35), (32, 15), 0, 0, 180, (50, 30, 80), 2)
+        cv2.ellipse, , 0, 0, 180, , 2)
+        cv2.ellipse, , 0, 0, 180, , 2)
         
     else:
         # More realistic eyes
-        cv2.ellipse(idle_img, (left_eye_x, eye_y), (25, 30), 0, 0, 360, (255, 255, 255), -1)
-        cv2.ellipse(idle_img, (right_eye_x, eye_y), (25, 30), 0, 0, 360, (255, 255, 255), -1)
-        cv2.circle(idle_img, (left_eye_x, eye_y), 15, eyes, -1)
-        cv2.circle(idle_img, (right_eye_x, eye_y), 15, eyes, -1)
-        cv2.circle(idle_img, (left_eye_x - 5, eye_y - 3), 5, (255, 255, 255), -1)
-        cv2.circle(idle_img, (right_eye_x - 5, eye_y - 3), 5, (255, 255, 255), -1)
+        cv2.ellipse, , 0, 0, 360, , -1)
+        cv2.ellipse, , 0, 0, 360, , -1)
+        cv2.circle, 15, eyes, -1)
+        cv2.circle, 15, eyes, -1)
+        cv2.circle, 5, , -1)
+        cv2.circle, 5, , -1)
     
     # Draw nose
     nose_y = center_y + 20
-    cv2.line(idle_img, (center_x, nose_y - 10), (center_x + 5, nose_y + 5), (180, 150, 220), 2)
+    cv2.line, , , 2)
     
-    # Draw mouth (closed, smiling)
+    # Draw mouth 
     mouth_y = center_y + 60
-    cv2.ellipse(idle_img, (center_x, mouth_y - 10), (40, 20), 0, 0, 180, (200, 100, 150), 3)
+    cv2.ellipse, , 0, 0, 180, , 3)
     
     # Blush
-    blush_color = (180, 140, 255) if style == "anime" else (200, 160, 220)
-    cv2.circle(idle_img, (center_x - 110, center_y + 30), 25, blush_color, -1)
-    cv2.circle(idle_img, (center_x + 110, center_y + 30), 25, blush_color, -1)
+    blush_color =  if style == "anime" else 
+    cv2.circle, 25, blush_color, -1)
+    cv2.circle, 25, blush_color, -1)
     
     # Add text
     font = cv2.FONT_HERSHEY_SIMPLEX
     text = config.CHARACTER_NAME
-    text_size = cv2.getTextSize(text, font, 2, 3)[0]
-    text_x = (width - text_size[0]) // 2
-    cv2.putText(idle_img, text, (text_x, height - 100), font, 2, (255, 255, 255), 3)
+    text_size = cv2.getTextSize[0]
+    text_x =  // 2
+    cv2.putText, font, 2, , 3)
     
-    subtitle = f"{style.title()} AI Streamer"
-    sub_size = cv2.getTextSize(subtitle, font, 1, 2)[0]
-    sub_x = (width - sub_size[0]) // 2
-    cv2.putText(idle_img, subtitle, (sub_x, height - 50), font, 1, (200, 200, 255), 2)
+    subtitle = f"{style.title} AI Streamer"
+    sub_size = cv2.getTextSize[0]
+    sub_x =  // 2
+    cv2.putText, font, 1, , 2)
     
     # Create talking version
-    talking_img = idle_img.copy()
+    talking_img = idle_img.copy
     
     # Draw open mouth
-    cv2.ellipse(talking_img, (center_x, mouth_y), (30, 40), 0, 0, 360, (100, 50, 80), -1)
-    cv2.ellipse(talking_img, (center_x, mouth_y), (30, 40), 0, 0, 360, (200, 100, 150), 3)
+    cv2.ellipse, , 0, 0, 360, , -1)
+    cv2.ellipse, , 0, 0, 360, , 3)
     
     # Add tongue for more expression
-    cv2.ellipse(talking_img, (center_x, mouth_y + 15), (15, 10), 0, 0, 180, (150, 100, 180), -1)
+    cv2.ellipse, , 0, 0, 180, , -1)
     
     # Save images
-    Path("assets").mkdir(exist_ok=True)
-    cv2.imwrite(config.AVATAR_IMAGE_PATH, idle_img)
-    cv2.imwrite(config.AVATAR_MOUTH_OPEN_PATH, talking_img)
+    Path.mkdir
+    cv2.imwrite
+    cv2.imwrite
     
-    print(f"✓ Avatar images saved:")
-    print(f"  - {config.AVATAR_IMAGE_PATH}")
-    print(f"  - {config.AVATAR_MOUTH_OPEN_PATH}")
+    print
+    print
+    print
     
     # Display preview
-    cv2.imshow("Idle", idle_img)
-    cv2.imshow("Talking", talking_img)
-    print("\nPress any key to close preview...")
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
+    cv2.imshow
+    cv2.imshow
+    print
+    cv2.waitKey
+    cv2.destroyAllWindows
 
 
 if __name__ == "__main__":
-    print("=" * 60)
-    print("🎨 Avatar Creator")
-    print("=" * 60)
+    print
+    print
+    print
     
-    print("\nAvailable styles: anime, realistic, cute")
-    print("Available hair colors: purple, pink, blue, red, blonde, black, white, green")
-    print("Available eye colors: purple, blue, green, brown, red, pink")
+    print
+    print
+    print
     
-    style = input("\nChoose style (default: anime): ").strip() or "anime"
-    hair = input("Choose hair color (default: purple): ").strip() or "purple"
-    eyes = input("Choose eye color (default: purple): ").strip() or "purple"
+    style = input: ").strip or "anime"
+    hair = input: ").strip or "purple"
+    eyes = input: ").strip or "purple"
     
-    print()
-    create_avatar(style, hair, eyes)
+    print
+    create_avatar
     
-    print("\n✨ Done! You can now run: python main.py")
+    print
+
 

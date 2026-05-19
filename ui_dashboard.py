@@ -1,10 +1,20 @@
 """
 ╔══════════════════════════════════════════════════════════════════════════════╗
-║                         CHUMEI ANGELS - UI DASHBOARD                         ║
+║                         CHUMEI ANGELS - UI DASHBOARD v7.1                    ║
 ║                                                                              ║
-║   ✅ Современный дизайн с градиентами и тенями                               ║
-║   ✅ Увеличенные аватарки (80x80)                                            ║
-║   ✅ Плавные анимации при наведении                                          ║
+║   ГЛАВНЫЙ ИНТЕРФЕЙС ПОЛЬЗОВАТЕЛЯ                                             ║
+║                                                                              ║
+║   📌 ОСОБЕННОСТИ:                                                            ║
+║   • РАБОТАЮЩИЕ горячие клавиши (Ctrl+C/V/X/A/Z/Y)                           ║
+║   • Вывод ВСЕХ диалогов в чат (истории, цепочки, случайные)                 ║
+║   • Увеличенные карточки девочек                                            ║
+║   • Видео-аватар                                                            ║
+║   • Поддержка girl_id для будущих аватаров                                  ║
+║                                                                              ║
+║   🎯 ГОРЯЧИЕ КЛАВИШИ:                                                        ║
+║   Ctrl+C - копировать | Ctrl+V - вставить | Ctrl+X - вырезать               ║
+║   Ctrl+A - выделить всё | Ctrl+Z - отмена | Ctrl+Y - повтор                 ║
+║   Enter - отправить сообщение                                               ║
 ╚══════════════════════════════════════════════════════════════════════════════╝
 """
 
@@ -15,67 +25,134 @@ import asyncio
 import tkinter as tk
 from PIL import Image, ImageTk
 from tkinter import messagebox
+import sys
 
-# ========== НАСТРОЙКА СТИЛЯ ==========
+
+def resource_path(relative_path):
+    try:
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+    return os.path.join(base_path, relative_path)
+
+
 ctk.set_appearance_mode("dark")
 ctk.set_default_color_theme("dark-blue")
 
 
-class ToolTip:
-    def __init__(self, widget, text):
+class ModernToolTip:
+    """Всплывающие подсказки"""
+    
+    def __init__(self, widget, text, title=None, delay=500):
         self.widget = widget
         self.text = text
+        self.title = title
+        self.delay = delay
         self.tip_window = None
-        self.widget.bind("<Enter>", self.show_tip)
-        self.widget.bind("<Leave>", self.hide_tip)
+        self.after_id = None
+        self.widget.bind("<Enter>", self._on_enter)
+        self.widget.bind("<Leave>", self._on_leave)
     
-    def show_tip(self, event=None):
-        if self.tip_window or not self.text:
+    def _on_enter(self, event=None):
+        self.after_id = self.widget.after(self.delay, self._show_tip)
+    
+    def _on_leave(self, event=None):
+        if self.after_id:
+            self.widget.after_cancel(self.after_id)
+            self.after_id = None
+        self._hide_tip()
+    
+    def _show_tip(self):
+        if self.tip_window:
             return
-        x, y, _, _ = self.widget.bbox("insert")
-        x += self.widget.winfo_rootx() + 25
-        y += self.widget.winfo_rooty() + 25
+        x = self.widget.winfo_rootx() + 20
+        y = self.widget.winfo_rooty() + self.widget.winfo_height() + 5
         self.tip_window = tw = tk.Toplevel(self.widget)
         tw.wm_overrideredirect(True)
         tw.wm_geometry(f"+{x}+{y}")
-        label = tk.Label(tw, text=self.text, justify="left",
-                         background="#2D2D2D", foreground="#FFFFFF",
-                         relief="flat", borderwidth=1,
-                         font=("Segoe UI", 10, "normal"))
-        label.pack()
+        tw.configure(bg="#2D2D2D")
+        frame = tk.Frame(tw, bg="#2D2D2D", relief="solid", borderwidth=1)
+        frame.pack()
+        if self.title:
+            title_label = tk.Label(
+                frame, text=self.title, font=("Segoe UI", 10, "bold"),
+                bg="#2D2D2D", fg="#0078D4"
+            )
+            title_label.pack(anchor="w", padx=8, pady=(6, 2))
+        label = tk.Label(
+            frame, text=self.text, justify="left", bg="#2D2D2D",
+            fg="#FFFFFF", font=("Segoe UI", 9), wraplength=300
+        )
+        label.pack(anchor="w", padx=8, pady=(0, 6))
+        tw.after(5000, self._hide_tip)
     
-    def hide_tip(self, event=None):
+    def _hide_tip(self):
         if self.tip_window:
-            self.tip_window.destroy()
+            try:
+                self.tip_window.destroy()
+            except:
+                pass
             self.tip_window = None
 
 
 class ChuMeiUI:
+    """ГЛАВНЫЙ КЛАСС ГРАФИЧЕСКОГО ИНТЕРФЕЙСА"""
+    
+    GIRLS_FULL_INFO = {
+        "chuchu": {
+            "name": "Чучу", "subtitle": "Японочка, косплей-модель",
+            "icon": "icon_chuchu.png", "color": "#FF69B4",
+            "full_info": "🌸 Чучу — японская косплей-модель\n📅 21 ноября\n📏 Рост: 153 см"
+        },
+        "mei": {
+            "name": "Мэй", "subtitle": "Вьетнамка, крафтерша",
+            "icon": "icon_mei.png", "color": "#98FB98",
+            "full_info": "🌸 Мэй — вьетнамская крафтерша\n📅 30 апреля\n📏 Рост: 162 см"
+        },
+        "hana": {
+            "name": "Хана", "subtitle": "Модель, любит дошик",
+            "icon": "icon_hana.png", "color": "#FFD700",
+            "full_info": "🌸 Хана Банни — модель\n📅 1 апреля\n📏 Рост: 155 см"
+        },
+        "ki": {
+            "name": "Ки", "subtitle": "Стеснительный косплеер",
+            "icon": "icon_ki.png", "color": "#DDA0DD",
+            "full_info": "🌸 Ки — стеснительный косплеер\n📅 27 августа\n📏 Рост: 150 см"
+        },
+        "simone": {
+            "name": "Симона", "subtitle": "Вокалистка Epica",
+            "icon": "icon_simone.png", "color": "#87CEEB",
+            "full_info": "🌸 Симона Симонс — вокалистка Epica\n📅 17 января\n📏 Рост: 168 см"
+        }
+    }
+    
     def __init__(self, chumei_instance):
         self.chumei = chumei_instance
-        
-        # История для undo/redo
         self.undo_stack = []
         self.redo_stack = []
         self.current_text = ""
         
         self.root = ctk.CTk()
         self.root.title("ChuMei Angels — виртуальный особняк в Сибуе")
-        self.root.geometry("1200x700")
+        self.root.geometry("1200x750")
+        self.root.minsize(900, 600)
         self.root.resizable(True, True)
         
-        # Установка иконки окна (если есть)
         try:
-            self.root.iconbitmap("assets/icon.ico")
+            icon_path = resource_path("Asian.ico")
+            if os.path.exists(icon_path):
+                self.root.iconbitmap(icon_path)
         except:
             pass
         
-        self.setup_ui()
-        self.setup_hotkeys()
-        self.update_loop()
-        self.center_window()
+        self._setup_ui()
+        self._setup_hotkeys()
+        self._update_loop()
+        self._center_window()
+        
+        self.input_entry.focus_set()
     
-    def center_window(self):
+    def _center_window(self):
         self.root.update_idletasks()
         width = self.root.winfo_width()
         height = self.root.winfo_height()
@@ -83,48 +160,35 @@ class ChuMeiUI:
         y = (self.root.winfo_screenheight() // 2) - (height // 2)
         self.root.geometry(f'{width}x{height}+{x}+{y}')
     
-    # ========== UNDO/REDO ==========
+    # ═══════════════════════════════════════════════════════════════════════════
+    # ГОРЯЧИЕ КЛАВИШИ (РАБОТАЮТ)
+    # ═══════════════════════════════════════════════════════════════════════════
     
-    def save_state(self):
-        current = self.input_entry.get()
-        if current != self.current_text:
-            self.undo_stack.append(self.current_text)
-            self.current_text = current
-            self.redo_stack.clear()
-            if len(self.undo_stack) > 50:
-                self.undo_stack.pop(0)
+    def _setup_hotkeys(self):
+        """Настраивает горячие клавиши (привязка к полю ввода)"""
+        self.input_entry.bind("<Control-c>", self._copy_text)
+        self.input_entry.bind("<Control-v>", self._paste_text)
+        self.input_entry.bind("<Control-x>", self._cut_text)
+        self.input_entry.bind("<Control-a>", self._select_all)
+        self.input_entry.bind("<Control-z>", self._undo)
+        self.input_entry.bind("<Control-y>", self._redo)
+        self.input_entry.bind("<Return>", lambda e: self._send_message())
+        self.input_entry.bind("<Button-3>", self._show_context_menu)
+        self.input_entry.bind("<KeyRelease>", lambda e: self._save_state())
+        
+        print("✅ Горячие клавиши настроены")
     
-    def undo(self, event=None):
-        if self.undo_stack:
-            self.redo_stack.append(self.current_text)
-            prev_text = self.undo_stack.pop()
-            self.current_text = prev_text
-            self.input_entry.delete(0, "end")
-            self.input_entry.insert(0, prev_text or "")
-            print("↩️ Отмена")
-        return "break"
+    def _save_state(self):
+        if hasattr(self, 'input_entry') and self.input_entry.winfo_exists():
+            current = self.input_entry.get()
+            if current != self.current_text:
+                self.undo_stack.append(self.current_text)
+                self.current_text = current
+                self.redo_stack.clear()
+                if len(self.undo_stack) > 50:
+                    self.undo_stack.pop(0)
     
-    def redo(self, event=None):
-        if self.redo_stack:
-            self.undo_stack.append(self.current_text)
-            next_text = self.redo_stack.pop()
-            self.current_text = next_text
-            self.input_entry.delete(0, "end")
-            self.input_entry.insert(0, next_text or "")
-            print("↪️ Возврат")
-        return "break"
-    
-    # ========== ГОРЯЧИЕ КЛАВИШИ ==========
-    
-    def setup_hotkeys(self):
-        self.input_entry.bind("<Control-c>", self.copy_text)
-        self.input_entry.bind("<Control-v>", self.paste_text)
-        self.input_entry.bind("<Control-x>", self.cut_text)
-        self.input_entry.bind("<Control-a>", self.select_all)
-        self.input_entry.bind("<Control-z>", self.undo)
-        self.input_entry.bind("<Control-y>", self.redo)
-    
-    def copy_text(self, event=None):
+    def _copy_text(self, event=None):
         try:
             selected = self.input_entry.selection_get()
             if selected:
@@ -135,11 +199,11 @@ class ChuMeiUI:
             pass
         return "break"
     
-    def paste_text(self, event=None):
+    def _paste_text(self, event=None):
         try:
             text = self.root.clipboard_get()
             if text:
-                self.save_state()
+                self._save_state()
                 cursor = self.input_entry.index("insert")
                 current = self.input_entry.get()
                 new = current[:cursor] + text + current[cursor:]
@@ -152,11 +216,11 @@ class ChuMeiUI:
             pass
         return "break"
     
-    def cut_text(self, event=None):
+    def _cut_text(self, event=None):
         try:
             selected = self.input_entry.selection_get()
             if selected:
-                self.save_state()
+                self._save_state()
                 self.root.clipboard_clear()
                 self.root.clipboard_append(selected)
                 start = self.input_entry.index("sel.first")
@@ -172,296 +236,349 @@ class ChuMeiUI:
             pass
         return "break"
     
-    def select_all(self, event=None):
+    def _select_all(self, event=None):
         self.input_entry.select_range(0, "end")
         self.input_entry.icursor("end")
         return "break"
     
-    def show_context_menu(self, event):
-        menu = tk.Menu(self.root, tearoff=0, bg="#2D2D2D", fg="white", activebackground="#0078D4", activeforeground="white")
-        menu.add_command(label="Копировать (Ctrl+C)", command=lambda: self.copy_text())
-        menu.add_command(label="Вырезать (Ctrl+X)", command=lambda: self.cut_text())
-        menu.add_command(label="Вставить (Ctrl+V)", command=lambda: self.paste_text())
+    def _undo(self, event=None):
+        if self.undo_stack:
+            self.redo_stack.append(self.current_text)
+            prev_text = self.undo_stack.pop()
+            self.current_text = prev_text
+            self.input_entry.delete(0, "end")
+            self.input_entry.insert(0, prev_text or "")
+            print("↩️ Отмена")
+        return "break"
+    
+    def _redo(self, event=None):
+        if self.redo_stack:
+            self.undo_stack.append(self.current_text)
+            next_text = self.redo_stack.pop()
+            self.current_text = next_text
+            self.input_entry.delete(0, "end")
+            self.input_entry.insert(0, next_text or "")
+            print("↪️ Возврат")
+        return "break"
+    
+    def _show_context_menu(self, event):
+        menu = tk.Menu(self.root, tearoff=0, bg="#2D2D2D", fg="white",
+                       activebackground="#0078D4", activeforeground="white")
+        menu.add_command(label="Копировать (Ctrl+C)", command=self._copy_text)
+        menu.add_command(label="Вырезать (Ctrl+X)", command=self._cut_text)
+        menu.add_command(label="Вставить (Ctrl+V)", command=self._paste_text)
         menu.add_separator()
-        menu.add_command(label="Отменить (Ctrl+Z)", command=lambda: self.undo())
-        menu.add_command(label="Повторить (Ctrl+Y)", command=lambda: self.redo())
+        menu.add_command(label="Отменить (Ctrl+Z)", command=self._undo)
+        menu.add_command(label="Повторить (Ctrl+Y)", command=self._redo)
         menu.add_separator()
-        menu.add_command(label="Выделить всё (Ctrl+A)", command=lambda: self.select_all())
+        menu.add_command(label="Выделить всё (Ctrl+A)", command=self._select_all)
         menu.add_command(label="Очистить", command=lambda: self.input_entry.delete(0, "end"))
         menu.post(event.x_root, event.y_root)
     
-    # ========== ПОСТРОЕНИЕ ИНТЕРФЕЙСА ==========
+    # ═══════════════════════════════════════════════════════════════════════════
+    # ПОСТРОЕНИЕ ИНТЕРФЕЙСА
+    # ═══════════════════════════════════════════════════════════════════════════
     
-    def setup_ui(self):
-        # Главный контейнер
+    def _setup_ui(self):
         self.main_container = ctk.CTkFrame(self.root, fg_color="transparent")
         self.main_container.pack(fill="both", expand=True, padx=10, pady=10)
         
-        # ========== ЛЕВАЯ ПАНЕЛЬ (видео) ==========
-        self.left_frame = ctk.CTkFrame(self.main_container, width=300, corner_radius=15, 
-                                       fg_color="#1E1E1E", border_width=1, border_color="#3D3D3D")
-        self.left_frame.pack(side="left", fill="y", padx=(0, 10))
-        self.left_frame.pack_propagate(False)
-        
-        # Заголовок панели
-        panel_title = ctk.CTkLabel(self.left_frame, text="🎬 Видео-аватар", 
-                                   font=ctk.CTkFont(size=12, weight="bold"), text_color="#0078D4")
-        panel_title.pack(pady=(10, 5))
-        
-        self.video_label = tk.Label(
-            self.left_frame, 
-            text="Загрузка видео...", 
-            bg="#1E1E1E", 
-            fg="#A0A0A0",
-            font=("Segoe UI", 11)
+        # Верхняя панель
+        self.top_panel = ctk.CTkFrame(
+            self.main_container, height=160, corner_radius=15,
+            fg_color="#1E1E1E", border_width=1, border_color="#3D3D3D"
         )
-        self.video_label.pack(expand=True, fill="both", padx=10, pady=(0, 10))
+        self.top_panel.pack(fill="x", pady=(0, 10))
+        self.top_panel.pack_propagate(False)
         
-        self.video_status = ctk.CTkLabel(self.left_frame, text="🟢 Аватар активен", 
-                                         font=ctk.CTkFont(size=10), text_color="#00FF00")
-        self.video_status.pack(side="bottom", pady=10)
-        
-        # ========== ЦЕНТРАЛЬНАЯ ПАНЕЛЬ (карточки) ==========
-        self.center_frame = ctk.CTkFrame(self.main_container, corner_radius=15, fg_color="transparent")
-        self.center_frame.pack(side="left", fill="both", expand=True, padx=(0, 10))
-        
-        # Заголовок центральной панели
-        self.header_frame = ctk.CTkFrame(self.center_frame, height=40, corner_radius=12, fg_color="#252526")
-        self.header_frame.pack(fill="x", pady=(0, 10))
-        self.header_frame.pack_propagate(False)
-        
-        self.title_label = ctk.CTkLabel(
-            self.header_frame,
-            text="🏠 ChuMei Angels — особняк в Сибуе | 5 уникальных помощниц",
-            font=ctk.CTkFont(size=14, weight="bold"),
-            text_color="#FFFFFF"
-        )
-        self.title_label.pack(expand=True)
-        
-        # Скроллируемая область
-        self.cards_frame = ctk.CTkScrollableFrame(self.center_frame, fg_color="transparent")
-        self.cards_frame.pack(fill="both", expand=True)
+        self.cards_container = ctk.CTkFrame(self.top_panel, fg_color="transparent")
+        self.cards_container.pack(fill="both", expand=True, padx=10, pady=10)
         
         self.girl_frames = {}
-        girls = ["chuchu", "mei", "hana", "ki", "simone"]
+        for girl_id in ["chuchu", "mei", "hana", "ki", "simone"]:
+            card = self._create_horizontal_card(self.cards_container, girl_id)
+            card.pack(side="left", expand=True, fill="both", padx=5)
+            self.girl_frames[girl_id] = card
         
-        for girl in girls:
-            frame = ctk.CTkFrame(self.cards_frame, corner_radius=12, border_width=1, border_color="#3D3D3D",
-                                fg_color="#252526")
-            frame.pack(fill="x", padx=5, pady=5)
-            self.girl_frames[girl] = frame
-            self.create_girl_card(frame, girl)
+        # Нижняя панель
+        self.bottom_panel = ctk.CTkFrame(self.main_container, fg_color="transparent")
+        self.bottom_panel.pack(fill="both", expand=True)
         
-        # ========== ПРАВАЯ ПАНЕЛЬ (ЧАТ) ==========
-        self.chat_frame = ctk.CTkFrame(self.main_container, width=380, corner_radius=15, fg_color="#1E1E1E")
-        self.chat_frame.pack(side="right", fill="y", expand=False)
-        self.chat_frame.pack_propagate(False)
-        
-        # Заголовок чата
-        self.chat_header = ctk.CTkFrame(self.chat_frame, height=40, corner_radius=12, fg_color="#252526")
-        self.chat_header.pack(fill="x", pady=(0, 10))
-        self.chat_header.pack_propagate(False)
-        
-        self.chat_title = ctk.CTkLabel(
-            self.chat_header,
-            text="💬 История диалогов",
-            font=ctk.CTkFont(size=13, weight="bold"),
-            text_color="#FFFFFF"
-        )
-        self.chat_title.pack(expand=True)
-        
-        self.chat_text = ctk.CTkTextbox(self.chat_frame, wrap="word", font=ctk.CTkFont(size=11),
-                                       fg_color="#2D2D2D", border_width=0)
-        self.chat_text.pack(fill="both", expand=True, pady=(0, 10))
-        self.chat_text.configure(state="disabled")
-        
-        # ========== ПОЛЕ ВВОДА ==========
-        self.input_frame = ctk.CTkFrame(self.chat_frame, height=45, corner_radius=12, fg_color="#252526")
-        self.input_frame.pack(fill="x", pady=(0, 10))
-        self.input_frame.pack_propagate(False)
-        
-        self.input_entry = ctk.CTkEntry(
-            self.input_frame, 
-            placeholder_text="💬 Введите сообщение... (Ctrl+Z/Y - отмена/повтор)", 
-            font=ctk.CTkFont(size=12),
-            corner_radius=10,
-            border_width=0
-        )
-        self.input_entry.pack(side="left", fill="x", expand=True, padx=(10, 5), pady=8)
-        self.input_entry.bind("<Return>", lambda e: self.send_text_command())
-        self.input_entry.bind("<Button-3>", self.show_context_menu)
-        self.input_entry.bind("<KeyRelease>", lambda e: self.save_state())
-        
-        self.send_button = ctk.CTkButton(
-            self.input_frame, text="📤", width=40, height=32,
-            command=self.send_text_command, 
-            fg_color="#0078D4", hover_color="#106EBE",
-            corner_radius=10
-        )
-        self.send_button.pack(side="right", padx=(0, 10), pady=6)
-        
-        # ========== КНОПКИ УПРАВЛЕНИЯ ==========
-        bottom_frame = ctk.CTkFrame(self.chat_frame, fg_color="transparent")
-        bottom_frame.pack(side="bottom", fill="x", pady=(0, 10))
-        
-        btn_style = {"width": 45, "height": 32, "corner_radius": 8}
-        
-        self.clear_chat_btn = ctk.CTkButton(bottom_frame, text="🗑", command=self.clear_chat, 
-                                           fg_color="#555555", hover_color="#777777", **btn_style)
-        self.clear_chat_btn.pack(side="left", padx=5, expand=True, fill="x")
-        
-        self.reset_button = ctk.CTkButton(bottom_frame, text="🔄", command=self.reset_bot, 
-                                         fg_color="#555555", hover_color="#777777", **btn_style)
-        self.reset_button.pack(side="left", padx=5, expand=True, fill="x")
-        
-        self.exit_button = ctk.CTkButton(bottom_frame, text="✖", command=self.exit_app, 
-                                        fg_color="#D32F2F", hover_color="#B71C1C", **btn_style)
-        self.exit_button.pack(side="left", padx=5, expand=True, fill="x")
-        
-        # ========== ЗАПУСК ВИДЕО ==========
-        if hasattr(self, 'chumei') and hasattr(self.chumei, 'avatar'):
-            print("🎬 Запускаем видео из UI...")
-            self.chumei.avatar.set_label(self.video_label)
-            self.chumei.avatar.start()
+        self._setup_video_panel()
+        self._setup_chat_panel()
     
-    def create_girl_card(self, frame, girl_name):
-        girls_data = {
-            "chuchu": ("👧 Чучу", "Японочка, косплей-модель", "icon_chuchu.png"),
-            "mei": ("👩 Мэй", "Вьетнамка, крафтерша", "icon_mei.png"),
-            "hana": ("🐰 Хана Банни", "Модель, любит дошик", "icon_hana.png"),
-            "ki": ("🥔 Ки (Potato)", "Стеснительный косплеер", "icon_ki.png"),
-            "simone": ("🎤 Симона", "Вокалистка Epica", "icon_simone.png")
-        }
-        name_text, subtitle, icon_file = girls_data.get(girl_name, (girl_name, "", ""))
+    def _create_horizontal_card(self, parent, girl_id):
+        info = self.GIRLS_FULL_INFO[girl_id]
+        AVATAR_SIZE = 90
         
-        frame.grid_columnconfigure(1, weight=1)
+        card = ctk.CTkFrame(
+            parent, corner_radius=12, border_width=1,
+            border_color="#3D3D3D", fg_color="#252526", height=140
+        )
+        card.pack_propagate(False)
         
-        # Аватар 80x80
-        icon_path = os.path.join("assets", "Avatars pic", icon_file)
+        icon_path = resource_path(os.path.join("assets", "Avatars pic", info["icon"]))
         if os.path.exists(icon_path):
             try:
                 original = Image.open(icon_path)
-                original.thumbnail((80, 80), Image.Resampling.LANCZOS)
-                avatar_img = ctk.CTkImage(light_image=original, dark_image=original, size=(original.width, original.height))
-                avatar_label = ctk.CTkLabel(frame, image=avatar_img, text="")
-                avatar_label.grid(row=0, column=0, padx=(12, 8), pady=12, rowspan=2)
-                avatar_label.bind("<Button-1>", lambda e, name=girl_name: self.open_gallery(name))
+                original.thumbnail((AVATAR_SIZE, AVATAR_SIZE), Image.Resampling.LANCZOS)
+                square_img = Image.new("RGB", (AVATAR_SIZE, AVATAR_SIZE), "#252526")
+                paste_x = (AVATAR_SIZE - original.width) // 2
+                paste_y = (AVATAR_SIZE - original.height) // 2
+                square_img.paste(original, (paste_x, paste_y))
+                avatar_img = ctk.CTkImage(light_image=square_img, dark_image=square_img, size=(AVATAR_SIZE, AVATAR_SIZE))
+                avatar_label = ctk.CTkLabel(card, image=avatar_img, text="")
+                avatar_label.pack(pady=(10, 5))
+                avatar_label.bind("<Button-1>", lambda e, g=girl_id: self._open_gallery(g))
+                ModernToolTip(avatar_label, info["full_info"], title=f"📸 {info['name']}")
             except:
-                avatar_label = ctk.CTkLabel(frame, text=name_text[:2], font=ctk.CTkFont(size=36))
-                avatar_label.grid(row=0, column=0, padx=(12, 8), pady=12, rowspan=2)
+                avatar_label = ctk.CTkLabel(card, text=info["name"][:2], font=ctk.CTkFont(size=40))
+                avatar_label.pack(pady=(10, 5))
         else:
-            avatar_label = ctk.CTkLabel(frame, text=name_text[:2], font=ctk.CTkFont(size=36))
-            avatar_label.grid(row=0, column=0, padx=(12, 8), pady=12, rowspan=2)
+            avatar_label = ctk.CTkLabel(card, text=info["name"][:2], font=ctk.CTkFont(size=40))
+            avatar_label.pack(pady=(10, 5))
         
-        name_label = ctk.CTkLabel(frame, text=name_text, font=ctk.CTkFont(size=13, weight="bold"))
-        name_label.grid(row=0, column=1, sticky="w", padx=(0, 5), pady=(12, 0))
+        name_label = ctk.CTkLabel(card, text=info["name"], font=ctk.CTkFont(size=14, weight="bold"))
+        name_label.pack()
+        ModernToolTip(name_label, f"Кликни для фотоальбома\n{info['subtitle']}", title=info["name"])
         
-        subtitle_label = ctk.CTkLabel(frame, text=subtitle, font=ctk.CTkFont(size=10), text_color="#888888")
-        subtitle_label.grid(row=1, column=1, sticky="w", padx=(0, 5))
-        
-        # Прогресс-бар
-        progress = ctk.CTkProgressBar(frame, width=130, height=6, corner_radius=3)
-        progress.grid(row=0, column=2, padx=5, pady=12)
+        progress = ctk.CTkProgressBar(card, width=80, height=6, corner_radius=3)
+        progress.pack(pady=(5, 0))
         progress.set(0.5)
         
-        val = ctk.CTkLabel(frame, text="50", font=ctk.CTkFont(size=11), width=35)
-        val.grid(row=0, column=3, padx=5)
+        bottom_frame = ctk.CTkFrame(card, fg_color="transparent")
+        bottom_frame.pack(pady=(2, 8))
         
-        floor_label = ctk.CTkLabel(frame, text="🏢🏢", font=ctk.CTkFont(size=14), width=40)
-        floor_label.grid(row=0, column=4, padx=5)
+        val_label = ctk.CTkLabel(bottom_frame, text="50", font=ctk.CTkFont(size=11), width=35)
+        val_label.pack(side="left")
         
-        frame.progress = progress
-        frame.relation_value = val
-        frame.floor_label = floor_label
-        frame.girl_name = girl_name
+        floor_label = ctk.CTkLabel(bottom_frame, text="🏢🏢", font=ctk.CTkFont(size=12), width=35)
+        floor_label.pack(side="left")
+        
+        card.progress = progress
+        card.relation_value = val_label
+        card.floor_label = floor_label
+        card.girl_name = girl_id
+        
+        return card
     
-    def open_gallery(self, girl_name):
-        base_path = os.path.join("assets", "girls", girl_name)
-        image_paths = []
-        if os.path.exists(base_path):
-            image_paths = [os.path.join(base_path, f) for f in os.listdir(base_path) 
-                          if f.lower().endswith(('.png', '.jpg', '.jpeg', '.gif', '.bmp'))]
-        if image_paths:
-            try:
-                from photo_gallery import GirlGallery
-                gallery = GirlGallery(self.root, girl_name, image_paths)
-            except ImportError:
-                messagebox.showinfo("Фотоальбом", f"Для {girl_name} найдено {len(image_paths)} фото")
-        else:
-            messagebox.showinfo("Нет фото", f"📸 Для {girl_name} пока нет фото")
+    def _setup_video_panel(self):
+        self.video_frame = ctk.CTkFrame(
+            self.bottom_panel, width=350, corner_radius=15,
+            fg_color="#1E1E1E", border_width=1, border_color="#3D3D3D"
+        )
+        self.video_frame.pack(side="left", fill="both", expand=True, padx=(0, 10))
+        self.video_frame.pack_propagate(False)
+        
+        title = ctk.CTkLabel(self.video_frame, text="🎬 Видео-аватар",
+                             font=ctk.CTkFont(size=12, weight="bold"), text_color="#0078D4")
+        title.pack(pady=(10, 5))
+        
+        self.video_label = tk.Label(
+            self.video_frame, text="🖼 Аватар загружается...",
+            bg="#1E1E1E", fg="#A0A0A0", font=("Segoe UI", 11)
+        )
+        self.video_label.pack(expand=True, fill="both", padx=10, pady=(0, 10))
+        
+        self.video_status = ctk.CTkLabel(self.video_frame, text="🟡 Аватар инициализируется",
+                                         font=ctk.CTkFont(size=10), text_color="#FFA500")
+        self.video_status.pack(side="bottom", pady=10)
+        
+        if hasattr(self, 'chumei') and hasattr(self.chumei, 'avatar'):
+            if hasattr(self.chumei.avatar, 'set_label'):
+                self.chumei.avatar.set_label(self.video_label)
+            if hasattr(self.chumei.avatar, 'start'):
+                self.chumei.avatar.start()
+                self.video_status.configure(text="🟢 Аватар активен", text_color="#00FF00")
     
-    # ========== ПОТОКОБЕЗОПАСНЫЕ МЕТОДЫ ==========
+    def _setup_chat_panel(self):
+        self.chat_frame = ctk.CTkFrame(
+            self.bottom_panel, width=450, corner_radius=15,
+            fg_color="#1E1E1E", border_width=1, border_color="#3D3D3D"
+        )
+        self.chat_frame.pack(side="right", fill="both", expand=True)
+        self.chat_frame.pack_propagate(False)
+        
+        header = ctk.CTkFrame(self.chat_frame, height=35, corner_radius=8, fg_color="#252526")
+        header.pack(fill="x", pady=(10, 5))
+        header.pack_propagate(False)
+        
+        title = ctk.CTkLabel(header, text="💬 История диалогов", font=ctk.CTkFont(size=13, weight="bold"))
+        title.pack(expand=True)
+        
+        self.chat_text = ctk.CTkTextbox(self.chat_frame, wrap="word", font=ctk.CTkFont(size=11),
+                                        fg_color="#2D2D2D", border_width=0)
+        self.chat_text.pack(fill="both", expand=True, pady=(0, 10))
+        self.chat_text.configure(state="disabled")
+        
+        self.input_frame = ctk.CTkFrame(self.chat_frame, height=45, corner_radius=10, fg_color="#252526")
+        self.input_frame.pack(fill="x", pady=(0, 10))
+        self.input_frame.pack_propagate(False)
+        
+        self.input_entry = ctk.CTkEntry(self.input_frame,
+                                        placeholder_text="💬 Введите сообщение... (Ctrl+Z/Y - отмена/повтор, ПКМ - меню)",
+                                        font=ctk.CTkFont(size=12), corner_radius=8, border_width=0)
+        self.input_entry.pack(side="left", fill="x", expand=True, padx=(10, 5), pady=8)
+        
+        send_btn = ctk.CTkButton(self.input_frame, text="📤", width=40, height=30,
+                                 command=self._send_message, fg_color="#0078D4", hover_color="#106EBE", corner_radius=8)
+        send_btn.pack(side="right", padx=(0, 10), pady=5)
+        
+        btn_frame = ctk.CTkFrame(self.chat_frame, fg_color="transparent")
+        btn_frame.pack(side="bottom", fill="x", pady=(0, 10))
+        
+        btn_style = {"width": 45, "height": 32, "corner_radius": 8}
+        
+        clear_btn = ctk.CTkButton(btn_frame, text="🗑", command=self._clear_chat,
+                                  fg_color="#555555", hover_color="#777777", **btn_style)
+        clear_btn.pack(side="left", padx=5, expand=True, fill="x")
+        ModernToolTip(clear_btn, "Очистить всю историю диалогов", title="🗑 Очистка чата")
+        
+        reset_btn = ctk.CTkButton(btn_frame, text="🔄", command=self._reset_bot,
+                                  fg_color="#555555", hover_color="#777777", **btn_style)
+        reset_btn.pack(side="left", padx=5, expand=True, fill="x")
+        ModernToolTip(reset_btn, "Сбросить состояние бота", title="🔄 Сброс")
+        
+        exit_btn = ctk.CTkButton(btn_frame, text="✖", command=self._exit_app,
+                                 fg_color="#D32F2F", hover_color="#B71C1C", **btn_style)
+        exit_btn.pack(side="left", padx=5, expand=True, fill="x")
+        ModernToolTip(exit_btn, "Закрыть приложение", title="✖ Выход")
     
-    def add_chat_message(self, speaker, text, is_user=False):
+    # ═══════════════════════════════════════════════════════════════════════════
+    # ДОБАВЛЕНИЕ СООБЩЕНИЯ В ЧАТ (ПОДДЕРЖИВАЕТ GIRL_ID)
+    # ═══════════════════════════════════════════════════════════════════════════
+    
+    def add_chat_message(self, speaker, text, is_user=False, girl_id=None):
+        """
+        Добавляет сообщение в историю чата.
+        
+        Аргументы:
+            speaker (str): имя говорящего
+            text (str): текст сообщения
+            is_user (bool): True если от пользователя
+            girl_id (str): идентификатор девочки (пока не используется, зарезервировано)
+        """
         def _add():
             try:
                 timestamp = datetime.now().strftime("%H:%M:%S")
-                if is_user:
-                    line = f"[{timestamp}] 👤 {speaker}: {text}\n"
-                else:
-                    line = f"[{timestamp}] 💬 {speaker}: {text}\n"
                 self.chat_text.configure(state="normal")
+                
+                if is_user:
+                    line = f"[{timestamp}] 👤 {speaker}: {text}\n\n"
+                else:
+                    line = f"[{timestamp}] 💬 {speaker}: {text}\n\n"
+                
                 self.chat_text.insert("end", line)
                 self.chat_text.see("end")
                 self.chat_text.configure(state="disabled")
             except Exception as e:
-                print(f"⚠️ Ошибка: {e}")
+                print(f"⚠️ Ошибка добавления сообщения: {e}")
         
         if self.root and self.root.winfo_exists():
             self.root.after(0, _add)
     
-    def update_data(self):
-        def _update():
-            try:
-                for girl, frame in self.girl_frames.items():
-                    level = getattr(self.chumei, f"affection_{girl}", 50)
-                    frame.progress.set(level / 100)
-                    frame.relation_value.configure(text=str(level))
-                    floor = level // 20
-                    frame.floor_label.configure(text="🏢" * (floor + 1))
-            except Exception as e:
-                print(f"⚠️ Ошибка обновления: {e}")
-        
-        if self.root and self.root.winfo_exists():
-            self.root.after(0, _update)
-    
-    def clear_chat(self):
-        self.chat_text.configure(state="normal")
-        self.chat_text.delete("1.0", "end")
-        self.chat_text.configure(state="disabled")
-        print("🗑 Чат очищен")
-    
-    def send_text_command(self):
+    def _send_message(self):
         text = self.input_entry.get().strip()
         if not text:
             return
-        self.save_state()
+        self._save_state()
         self.input_entry.delete(0, "end")
         self.current_text = ""
         self.add_chat_message("Вы", text, is_user=True)
         if hasattr(self, 'chumei'):
             asyncio.create_task(self.chumei.process_text_command(text))
     
-    def update_loop(self):
+    def _clear_chat(self):
+        self.chat_text.configure(state="normal")
+        self.chat_text.delete("1.0", "end")
+        self.chat_text.configure(state="disabled")
+        print("🗑 Чат очищен")
+    
+    def _update_loop(self):
         if self.root.winfo_exists():
-            self.update_data()
-            self.root.after(1000, self.update_loop)
+            self._update_data()
+            self.root.after(1000, self._update_loop)
     
-    def reset_bot(self):
-        self.chumei.story_playing = False
-        self.chumei.sleep_mode = False
-        self.chumei.is_processing = False
-        self.chumei.censorship_mode = True
-        self.chumei.story_index = 0
-        print("🔄 Бот сброшен")
+    def _update_data(self):
+        def _update():
+            try:
+                for girl, card in self.girl_frames.items():
+                    level = getattr(self.chumei, f"affection_{girl}", 50)
+                    if hasattr(card, 'progress'):
+                        card.progress.set(level / 100)
+                        if hasattr(card, 'relation_value'):
+                            card.relation_value.configure(text=str(level))
+                        if hasattr(card, 'floor_label'):
+                            floor_count = level // 20
+                            card.floor_label.configure(text="🏢" * (floor_count + 1))
+            except Exception as e:
+                print(f"⚠️ Ошибка обновления: {e}")
+        
+        if self.root and self.root.winfo_exists():
+            self.root.after(0, _update)
     
-    def exit_app(self):
+    def _open_gallery(self, girl_name):
+        base_path = resource_path(os.path.join("assets", "girls", girl_name))
+        image_paths = []
+        if os.path.exists(base_path):
+            image_paths = [os.path.join(base_path, f) for f in os.listdir(base_path)
+                          if f.lower().endswith(('.png', '.jpg', '.jpeg', '.gif', '.bmp'))]
+        if image_paths:
+            try:
+                from photo_gallery import GirlGallery
+                gallery = GirlGallery(self.root, girl_name, image_paths)
+                gallery.show()
+            except ImportError:
+                messagebox.showinfo("Фотоальбом", f"📸 Для {girl_name} найдено {len(image_paths)} фото")
+        else:
+            messagebox.showinfo("Нет фото", f"📸 Для {girl_name} пока нет фото")
+    
+    def _reset_bot(self):
+        if hasattr(self, 'chumei'):
+            self.chumei.story_playing = False
+            self.chumei.sleep_mode = False
+            self.chumei.is_processing = False
+            self.chumei.censorship_mode = True
+            self.chumei.story_index = 0
+            print("🔄 Бот сброшен")
+    
+    def _exit_app(self):
         print("👋 Закрытие...")
-        if hasattr(self.chumei, 'avatar'):
-            self.chumei.avatar.stop()
-        self.chumei.running = False
+        if hasattr(self, 'chumei') and hasattr(self.chumei, 'avatar'):
+            try:
+                self.chumei.avatar.stop()
+            except:
+                pass
+        if hasattr(self, 'chumei'):
+            self.chumei.running = False
         self.root.quit()
         self.root.destroy()
     
     def run(self):
+        print("🚀 ChuMei Angels UI v7.1 запущен")
+        print("✅ Горячие клавиши работают (Ctrl+C/V/X/A/Z/Y)")
+        print("✅ Все диалоги выводятся в чат")
         self.root.mainloop()
+
+
+if __name__ == "__main__":
+    class MockChuMei:
+        def __init__(self):
+            self.affection_chuchu = 50
+            self.affection_mei = 50
+            self.affection_hana = 50
+            self.affection_ki = 50
+            self.affection_simone = 50
+            self.story_playing = False
+            self.sleep_mode = False
+            self.is_processing = False
+            self.censorship_mode = True
+            self.story_index = 0
+            self.running = True
+            self.avatar = None
+        async def process_text_command(self, text):
+            print(f"[МОК] Обработка: {text}")
+    
+    mock = MockChuMei()
+    app = ChuMeiUI(mock)
+    app.run()

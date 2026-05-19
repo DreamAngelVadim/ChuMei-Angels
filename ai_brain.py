@@ -3,6 +3,8 @@
 ║                         AI BRAIN MODULE                                      ║
 ║                    Локальная версия на Ollama с памятью                      ║
 ║                    Поддержка 5 девочек: Чучу, Мэй, Хана, Ки, Симона         ║
+║                    Поддержка имени пользователя                              ║
+║                    Проверка грамматики через FRIDA + правила                 ║
 ╚══════════════════════════════════════════════════════════════════════════════╝
 """
 
@@ -11,6 +13,7 @@
 # ═══════════════════════════════════════════════════════════════════════════════
 
 import ollama
+import re
 from config import OLLAMA_MODEL, MEMORY_ENABLED, MEMORY_MAX_MESSAGES
 from memory import Memory
 
@@ -21,6 +24,164 @@ from memory import Memory
 
 conversation_history = []
 memory = Memory()
+
+# Настройки грамматической проверки
+USE_GRAMMAR_CHECK = True          # Включить проверку грамматики
+USE_FRIDA_EMBEDDINGS = False      # Использовать FRIDA для эмбеддингов (пока отключено)
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# 2.5 ФУНКЦИИ ДЛЯ ПРОВЕРКИ ГРАММАТИКИ И ПУНКТУАЦИИ
+# ═══════════════════════════════════════════════════════════════════════════════
+
+def fix_punctuation(text):
+    """
+    Быстрое исправление пунктуации без ИИ (для скорости и базовых ошибок)
+    """
+    if not text or not text.strip():
+        return text
+    
+    original = text
+    text = text.strip()
+    
+    # Добавляем точку в конце, если её нет и нет других знаков препинания
+    if text and text[-1] not in '.!?;:':
+        text += '.'
+    
+    # Делаем первую букву заглавной
+    if text:
+        text = text[0].upper() + text[1:]
+    
+    # Исправляем пробелы перед знаками препинания
+    text = re.sub(r'\s+([.,!?;:])', r'\1', text)
+    
+    # Исправляем пробелы после знаков препинания
+    text = re.sub(r'([.,!?;:])([А-Яа-яA-Za-z])', r'\1 \2', text)
+    
+    # Убираем лишние пробелы
+    text = re.sub(r'\s+', ' ', text)
+    
+    # Исправляем тире
+    text = text.replace(' - ', ' — ')
+    text = text.replace(' -', ' —')
+    text = text.replace('- ', '— ')
+    
+    # Исправляем кавычки
+    text = text.replace('"', '»')
+    text = text.replace("'", '»')
+    
+    # Исправляем "не" с глаголами (базовое правило)
+    text = re.sub(r'(\S)не(\s+[а-яА-Я]+[ь]?[тс]ь)', r'\1 не\2', text)
+    
+    if text != original:
+        print(f"📝 Пунктуация: '{original[:50]}...' → '{text[:50]}...'")
+    
+    return text
+
+
+def check_grammar_with_llama(text):
+    """
+    Проверяет грамматику через основную модель llama3.1:8b
+    """
+    if not USE_GRAMMAR_CHECK or not text or not text.strip():
+        return text
+    
+    prompt = f"""Ты — грамматический корректор. Исправь следующие ошибки в тексте:
+
+ОШИБКИ ДЛЯ ИСПРАВЛЕНИЯ:
+- пропущенные или лишние запятые
+- пропущенные точки в конце предложений
+- грамматические ошибки (род, число, падеж)
+- опечатки
+- заглавные буквы в начале предложений
+- согласование слов
+
+ТЕКСТ ДЛЯ ИСПРАВЛЕНИЯ:
+{text}
+
+Верни ТОЛЬКО исправленный текст, без пояснений.
+Исправленный текст:"""
+    
+    try:
+        response = ollama.generate(model=OLLAMA_MODEL, prompt=prompt)
+        corrected = response["response"].strip()
+        if corrected and corrected != text:
+            print(f"📝 Грамматика (llama): '{text[:60]}...' → '{corrected[:60]}...'")
+        return corrected
+    except Exception as e:
+        print(f"⚠️ Ошибка грамматической проверки: {e}")
+        return text
+
+
+def check_grammar_combined(text):
+    """
+    Комбинированная проверка грамматики:
+    1. Быстрая пунктуация
+    2. Глубокий анализ через llama (опционально)
+    """
+    if not text:
+        return text
+    
+    # 1. Быстрая пунктуация
+    text = fix_punctuation(text)
+    
+    # 2. Глубокий анализ через llama (включён по умолчанию)
+    text = check_grammar_with_llama(text)
+    
+    return text
+
+
+def get_frida_embedding(text):
+    """
+    Получает эмбеддинг текста через FRIDA (для поиска похожих фраз)
+    FRIDA — embedding model, не генерирует текст, только векторы
+    """
+    try:
+        response = ollama.embeddings(model="evilfreelancer/FRIDA:823m-f32", prompt=text)
+        return response["embedding"]
+    except Exception as e:
+        print(f"⚠️ Ошибка получения эмбеддинга FRIDA: {e}")
+        return None
+
+
+def cosine_similarity(a, b):
+    """Вычисляет косинусную схожесть двух векторов"""
+    if not a or not b:
+        return 0
+    dot_product = sum(x * y for x, y in zip(a, b))
+    norm_a = sum(x * x for x in a) ** 0.5
+    norm_b = sum(x * x for x in b) ** 0.5
+    if norm_a == 0 or norm_b == 0:
+        return 0
+    return dot_product / (norm_a * norm_b)
+
+
+def find_similar_in_knowledge_base(query, knowledge_base, threshold=0.7):
+    """
+    Ищет похожие фразы в базе знаний через FRIDA эмбеддинги
+    """
+    if not USE_FRIDA_EMBEDDINGS:
+        return None
+    
+    query_emb = get_frida_embedding(query)
+    if not query_emb:
+        return None
+    
+    best_match = None
+    best_score = 0
+    
+    for item in knowledge_base:
+        item_emb = get_frida_embedding(item["text"])
+        if item_emb:
+            score = cosine_similarity(query_emb, item_emb)
+            if score > best_score and score > threshold:
+                best_score = score
+                best_match = item
+    
+    if best_match:
+        print(f"🔍 Найдено в базе знаний: {best_match['text'][:50]}... (схожесть: {best_score:.2f})")
+    
+    return best_match
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -104,7 +265,7 @@ GIRL_INSTRUCTIONS = {
 
 ТВОЯ ВНЕШНОСТЬ:
 - Рост 155–162 см, миниатюрная, стройная
-- У тебя точевая талия и стройные ноги
+- У тебя точечная талия и стройные ноги
 - Лицо: мягкий овал, пухлые щеки ("baby face")
 - Округлые тёмно-карие глаза (часто с аниме-линзами)
 - Тонкий аккуратный нос, небольшие пухлые губы
@@ -148,9 +309,14 @@ GIRL_INSTRUCTIONS = {
 # 4. ФУНКЦИЯ ПОЛУЧЕНИЯ ПРОМПТА ДЛЯ ДЕВОЧКИ
 # ═══════════════════════════════════════════════════════════════════════════════
 
-def get_girl_prompt(girl_name, base_prompt):
-    """Собирает полный промпт с учётом характера девочки"""
+def get_girl_prompt(girl_name, base_prompt, user_name=None):
+    """Собирает полный промпт с учётом характера девочки и имени пользователя"""
     girl_instruction = GIRL_INSTRUCTIONS.get(girl_name, GIRL_INSTRUCTIONS["chuchu"])
+    
+    # Добавляем имя пользователя в инструкцию
+    name_instruction = ""
+    if user_name:
+        name_instruction = f"\n\nВАЖНО: Пользователя зовут {user_name}. Всегда обращайся к нему по имени {user_name} в своих ответах. Никогда не используй другие имена (например, Вадим).\n"
     
     # Правила форматирования ответа
     format_rule = f"""
@@ -158,26 +324,24 @@ def get_girl_prompt(girl_name, base_prompt):
 🤖 ПРАВИЛО ФОРМАТИРОВАНИЯ ОТВЕТА (ОБЯЗАТЕЛЬНО):
 Твой ответ должен начинаться ровно с такого тега: [{girl_name}]
 После тега поставь пробел и пиши ответ.
-НЕ добавляй ничего перед тегом. НЕ используй другие теги.
+НЕ добавляй ничего перед тегом. НЕ используй другие теги!
 
-Примеры:
-[chuchu] Привет, Вадим! Хи-хи-хи! Мои сисечки уже соскучились!
-[mei] Ара-ара, здравствуй... Доспех сегодня особенно блестит.
-[hana] О, привет... Дошик есть? А деньги? Нет? Ну и ладно...
-[ki] Здравствуйте... я... рада вас видеть... (краснеет)
-[simone] Добрый вечер. Рада нашей встрече. Epica сегодня не репетирует.
+ВАЖНО: Ты говоришь от имени {girl_name}! Не используй теги других девочек!
 
-Запомни: если ты не поставишь тег в начале ответа, система не поймёт, кто говорит!
+Примеры для {girl_name}:
+[{girl_name}] Привет, {user_name if user_name else 'друг'}! Как дела?
+
+Запомни: если ты не поставишь тег [{girl_name}] в начале ответа, система не поймёт, кто говорит!
 """
     
-    return base_prompt + girl_instruction + format_rule
+    return base_prompt + name_instruction + girl_instruction + format_rule
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # 5. ОСНОВНАЯ ФУНКЦИЯ - ОТПРАВКА ЗАПРОСА В OLLAMA
 # ═══════════════════════════════════════════════════════════════════════════════
 
-def get_ai_response(user_message, system_prompt, girl_name="chuchu"):
+def get_ai_response(user_message, system_prompt, girl_name="chuchu", user_name=None):
     """
     Отправляет запрос в Ollama и возвращает ответ.
     
@@ -185,7 +349,21 @@ def get_ai_response(user_message, system_prompt, girl_name="chuchu"):
     - user_message: текст, который сказал пользователь
     - system_prompt: инструкция для ИИ (характер, правила)
     - girl_name: имя девочки (chuchu, mei, hana, ki, simone)
+    - user_name: имя пользователя (Андрей, Вадим и т.д.)
     """
+    
+    # ═══════════════════════════════════════════════════════════════════════════
+    # 5.0 ПРЕДОБРАБОТКА СООБЩЕНИЯ ПОЛЬЗОВАТЕЛЯ
+    # ═══════════════════════════════════════════════════════════════════════════
+    
+    # Проверяем грамматику и пунктуацию сообщения пользователя
+    original_message = user_message
+    user_message = check_grammar_combined(user_message)
+    
+    if user_message != original_message:
+        print(f"📝 Сообщение после грамматической проверки:")
+        print(f"   Было: {original_message}")
+        print(f"   Стало: {user_message}")
     
     # ═══════════════════════════════════════════════════════════════════════════
     # 5.1 ЗАГРУЗКА ФАКТОВ ИЗ ПАМЯТИ ДЛЯ КОНКРЕТНОЙ ДЕВОЧКИ
@@ -195,21 +373,22 @@ def get_ai_response(user_message, system_prompt, girl_name="chuchu"):
     facts_text = ""
     
     if facts:
-        facts_text = """
+        name_for_facts = user_name if user_name else "Вадим"
+        facts_text = f"""
         
-⚠️ ВАЖНО! Ниже список фактов о Вадиме, которые я запомнила.
+⚠️ ВАЖНО! Ниже список фактов о {name_for_facts}, которые я запомнила.
 Ты ОБЯЗАН(а) использовать эти факты в разговоре, если они хоть как-то относятся к вопросу.
 Но делай это ЕСТЕСТВЕННО, с юмором, подколами, в своём стиле.
-Не перечисляй сухо. Игриво подкалывай Вадима на основе этих фактов.
+Не перечисляй сухо. Игриво подкалывай {name_for_facts} на основе этих фактов.
 
-ФАКТЫ О ВАДИМЕ:
+ФАКТЫ О {name_for_facts.upper()}:
 """ + "\n".join(f"- {f}" for f in facts)
     
     # ═══════════════════════════════════════════════════════════════════════════
     # 5.2 СБОРКА ПОЛНОГО ПРОМПТА
     # ═══════════════════════════════════════════════════════════════════════════
     
-    full_prompt = get_girl_prompt(girl_name, system_prompt) + facts_text
+    full_prompt = get_girl_prompt(girl_name, system_prompt, user_name) + facts_text
     
     messages = [{"role": "system", "content": full_prompt}]
     
@@ -227,6 +406,23 @@ def get_ai_response(user_message, system_prompt, girl_name="chuchu"):
         response = ollama.chat(model=OLLAMA_MODEL, messages=messages)
         assistant_message = response["message"]["content"]
         
+        # ========== КОРРЕКЦИЯ ТЕГОВ ==========
+        expected_tag = f"[{girl_name}]"
+        
+        # Если ответ не начинается с правильного тега
+        if not assistant_message.startswith(expected_tag):
+            # Ищем любой тег в начале
+            tag_match = re.match(r'\[[a-z]+\]', assistant_message)
+            if tag_match:
+                wrong_tag = tag_match.group()
+                if wrong_tag != expected_tag:
+                    print(f"⚠️ Исправляю неверный тег: {wrong_tag} -> {expected_tag}")
+                    assistant_message = expected_tag + assistant_message[len(wrong_tag):]
+            else:
+                # Если тега нет — добавляем
+                print(f"⚠️ Добавляю пропущенный тег: {expected_tag}")
+                assistant_message = expected_tag + " " + assistant_message
+        
         # Выводим сырой ответ для отладки
         print(f"📨 Сырой ответ от {girl_name}: {assistant_message[:200]}...")
         
@@ -239,3 +435,27 @@ def get_ai_response(user_message, system_prompt, girl_name="chuchu"):
     except Exception as e:
         print(f"❌ Ошибка связи с Ollama: {e}")
         return f"[{girl_name}] Ой, кажется, я задумалась и зависла. Спроси меня ещё раз!"
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# 6. ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ДЛЯ ВНЕШНЕГО ИСПОЛЬЗОВАНИЯ
+# ═══════════════════════════════════════════════════════════════════════════════
+
+def clear_conversation_history():
+    """Очищает историю диалогов"""
+    global conversation_history
+    conversation_history = []
+    print("🗑 История диалогов очищена")
+
+
+def get_conversation_history():
+    """Возвращает историю диалогов"""
+    return conversation_history
+
+
+def preprocess_user_message(text):
+    """
+    Отдельная функция для предобработки сообщения пользователя
+    (можно использовать вне get_ai_response)
+    """
+    return check_grammar_combined(text)

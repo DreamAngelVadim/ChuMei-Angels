@@ -3,7 +3,6 @@
 """
 import re
 
-
 # Таблица транслитерации
 TRANSLIT_TABLE = {
     'a': 'э', 'b': 'б', 'c': 'к', 'd': 'д', 'e': 'е', 'f': 'ф',
@@ -32,31 +31,35 @@ SPECIAL_COMBOS = {
     'Tion': 'Шн', 'Sion': 'Жн',
 }
 
-
 def transliterate(text: str) -> str:
     """Переводит английские слова в русскую транскрипцию."""
-    # Находим английские слова (латиница)
+    if not text:
+        return text
+    
+    # Находим английские слова (буквы A-Z a-z)
     def replace_english(match):
         word = match.group(0)
-        # Если слово короткое (предлог, артикль) — пропускаем
+        # Короткие служебные слова пропускаем
         if len(word) <= 2 and word.lower() in ['a', 'an', 'the', 'of', 'in', 'on', 'at', 'to', 'by', 'is', 'it']:
             return word
         
-        # Применяем особые сочетания сначала
-        for combo, replacement in sorted(SPECIAL_COMBOS.items(), key=lambda x: -len(x[0])):
-            word = word.replace(combo, replacement)
+        result = word
+        # Сначала применяем особые сочетания
+        for combo, replacement in SPECIAL_COMBOS.items():
+            result = result.replace(combo, replacement)
         
-        # Применяем побуквенную транслитерацию
-        result = []
-        for char in word:
+        # Побуквенная транслитерация
+        final = []
+        for char in result:
             if char in TRANSLIT_TABLE:
-                result.append(TRANSLIT_TABLE[char])
+                final.append(TRANSLIT_TABLE[char])
             else:
-                result.append(char)
+                final.append(char)
         
-        return ''.join(result)
+        return ''.join(final)
     
-    # Заменяем все английские слова
-    text = re.sub(r'[a-zA-Z]{2,}', replace_english, text)
+    # Заменяем все английские слова (не кириллица и не цифры)
+    pattern = r'\b[A-Za-z]{3,}\b'
+    text = re.sub(pattern, replace_english, text)
     
     return text

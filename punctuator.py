@@ -1,39 +1,33 @@
 """
-Модуль расстановки запятых по правилам русского языка
+Модуль расстановки пунктуации для русского текста
 """
-import re
 
+import re
 
 class RuPunctuator:
     def __init__(self):
-        print("Модуль пунктуации готов!")
-
-    def add_punctuation(self, text: str) -> str:
-        """Базовая расстановка запятых."""
-        if not text or not text.strip():
+        """Инициализация"""
+        print("📝 Загружаем модуль пунктуации...")
+        # Простая реализация без внешних зависимостей
+    
+    def punctuate(self, text: str) -> str:
+        """Расставляет пунктуацию в тексте"""
+        if not text:
             return text
-
-        # Запятая перед союзами
-        text = re.sub(
-            r'\s+(что|чтобы|если|когда|потому что|так как|поскольку|хотя|пока|как|где|куда|откуда|зачем|почему|чей|кто)\s+',
-            r', \1 ', text, flags=re.IGNORECASE
-        )
-
-        # Запятая перед "а", "но", "да", "однако", "зато"
-        text = re.sub(
-            r'\s+(а|но|да|однако|зато)\s+',
-            r', \1 ', text, flags=re.IGNORECASE
-        )
-
-        # Запятая перед "который", "которая", "которое", "которые"
-        text = re.sub(
-            r'\s+(который|которая|которое|которые|которых|которым|которыми)\s+',
-            r', \1 ', text, flags=re.IGNORECASE
-        )
-
-        # Убираем двойные запятые
-        text = re.sub(r',\s*,', ',', text)
-        # Убираем запятую в начале строки
-        text = re.sub(r'^,\s*', '', text)
-
+        
+        # Делаем первую букву заглавной
+        text = text.strip()
+        if text:
+            text = text[0].upper() + text[1:] if len(text) > 1 else text.upper()
+        
+        # Добавляем точку в конце, если её нет
+        if text and text[-1] not in '.!?;:':
+            text += '.'
+        
+        # Простые замены
+        text = text.replace(' ,', ',')
+        text = text.replace(' .', '.')
+        text = text.replace(' !', '!')
+        text = text.replace(' ?', '?')
+        
         return text

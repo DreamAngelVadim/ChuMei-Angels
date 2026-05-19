@@ -7,50 +7,49 @@ import os
 import time
 
 class WhisperHandler:
-    def __init__(self, model_size="base"):
-        print(f"🔄 Загрузка Whisper {model_size}...")
-        self.model = whisper.load_model(model_size)
+    def __init__:
+        print
+        self.model = whisper.load_model
         self.sample_rate = 16000
         self.duration = 4  # 4 секунды на фразу
-        print(f"✅ Whisper готов!")
+        print
     
-    def listen(self):
-        print("🎤 Слушаю...")
+    def listen:
+        print
         
         # Запись
-        recording = sd.rec(
-            int(self.duration * self.sample_rate),
+        recording = sd.rec,
             samplerate=self.sample_rate,
             channels=1,
             dtype=np.int16
         )
-        sd.wait()
+        sd.wait
         
         # Сохраняем во временный файл
-        with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp:
-            with wave.open(tmp.name, 'wb') as wf:
-                wf.setnchannels(1)
-                wf.setsampwidth(2)
-                wf.setframerate(self.sample_rate)
-                wf.writeframes(recording.tobytes())
+        with tempfile.NamedTemporaryFile as tmp:
+            with wave.open as wf:
+                wf.setnchannels
+                wf.setsampwidth
+                wf.setframerate
+                wf.writeframes)
             
-            result = self.model.transcribe(tmp.name, language="ru")
-            text = result["text"].strip()
+            result = self.model.transcribe
+            text = result["text"].strip
         
-        os.unlink(tmp.name)
+        os.unlink
         
         if text:
-            print(f"📝 Распознано: {text}")
+            print
             return text
         return None
 
 # Простой тест
 if __name__ == "__main__":
-    whisper = WhisperHandler()
+    whisper = WhisperHandler
     while True:
-        text = whisper.listen()
+        text = whisper.listen
         if text:
-            print(f"Результат: {text}")
-            if "стоп" in text.lower():
-                print("Выход...")
+            print
+            if "стоп" in text.lower:
+                print
                 break
