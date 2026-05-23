@@ -1,368 +1,357 @@
+"""
+Silero TTS v5 с поддержкой русского и английского языков
+Автоматическое переключение между моделями в зависимости от текста
+"""
+
 import torch
 import numpy as np
 import scipy.io.wavfile as wav
-import asyncio
 import pygame
 import tempfile
 import os
 import re
+import asyncio
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 class SileroTTS:
+    """Улучшенный TTS с поддержкой русского и английского языков"""
+    
     def __init__(self):
-        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        torch.set_num_threads(4)
+        print("🎤 Загрузка Silero TTS (русская + английская модели)...")
         
-        self.model, _ = torch.hub.load(
+        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        print(f"   Device: {self.device}")
+        
+        # ---------- РУССКАЯ МОДЕЛЬ (v5_4_ru) ----------
+        print("   📚 Загрузка русской модели (v5_4_ru)...")
+        self.model_ru, _ = torch.hub.load(
             repo_or_dir='snakers4/silero-models',
             model='silero_tts',
             language='ru',
             speaker='v5_4_ru'
         )
-        self.model.to(self.device)
+        self.model_ru.to(self.device)
+        
+        # ---------- АНГЛИЙСКАЯ МОДЕЛЬ (v3_en) ----------
+        print("   📚 Загрузка английской модели (v3_en)...")
+        self.model_en, _ = torch.hub.load(
+            repo_or_dir='snakers4/silero-models',
+            model='silero_tts',
+            language='en',
+            speaker='v3_en'
+        )
+        self.model_en.to(self.device)
+        
         self.sample_rate = 48000
         
-        # ========== НАСТРОЙКА ВСЕХ 5 ГОЛОСОВ ==========
-        self.VOICE_CONFIG = {
-            "chuchu": {"speaker": "xenia", "rate": 1.0},
-            "mei": {"speaker": "baya", "rate": 1.0},
-            "hana": {"speaker": "xenia", "rate": 0.85},
-            "ki": {"speaker": "baya", "rate": 0.77},
-            "simone": {"speaker": "baya", "rate": 0.95},
-        }
+        # Флаги для русской модели
+        self.put_accent = True
+        self.put_yo = True
+        self.put_stress_homo = True
+        self.put_yo_homo = True
+        self.intensity = 3
         
-        self.max_chunk_size = 5000
-        self.chunk_pause = 0.3
+        # Настройки для предотвращения обрыва фраз
+        self.add_final_punctuation = True
+        self.add_silence_buffer = True
+        self.silence_buffer_ms = 300
+        self.add_final_word = False
         
         pygame.mixer.init(frequency=self.sample_rate, size=-16, channels=1)
-        self.audio_cache = {}
+        print("✅ TTS готов (русский + английский)")
     
-    def _transliterate_english(self, text):
-        """Расширенная замена английских слов, имён и названий"""
-        
-        text = re.sub(r'\[[a-z]+\]', '', text)
-        text = re.sub(r'\[/[a-z]+\]', '', text)
-        text = re.sub(r'<[^>]+>', '', text)
-        
-        proper_names = {
-            'Yaya Han': 'Яя Хан',
-            'Yaya': 'Яя',
-            'Han': 'Хан',
-            'Kamui Cosplay': 'Камуи Косплей',
-            'Kamui': 'Камуи',
-            'Joe Cocker': 'Джо Кокер',
-            'Joe': 'Джо',
-            'Cocker': 'Кокер',
-            'You Can Leave Your Hat On': 'Ю Кэн Лив Ёр Хэт Он',
-            'Unchain My Heart': 'Анчейн Май Харт',
-            'The Phantom Agony': 'Фантом Агони',
-            'Phantom Agony': 'Фантом Агони',
-            'ChuMei Distribution': 'Чумей Дистрибьюшн',
-            'ChuMei': 'Чумей',
-            'ChuMei Angels': 'Чумей Энджелс',
-            'Yahoo Auctions Japan': 'Яху Окшнс Джапан',
-            'Mercari': 'Меркари',
-            'AllThingsWorn': 'Ол Синкс Уорн',
-            'Hana Bunny x Yaya Han': 'Хана Банни энд Яя Хан',
-            'SPF': 'Эс-Пи-Эф',
-            'Vincent': 'Винсент',
-            'Ilse': 'Ильзе',
-            'Yaya Han x Hana Bunny': 'Яя Хан и Хана Банни',
-            'Simons': 'Симонс',
-            'Live in Seoul': 'Лайв ин Сеул',
-            'Live': 'Лайв',
-            'Seoul': 'Сеул',
+    def _transliterate_english(self, text: str) -> str:
+        """Заменяет английские слова русским произношением"""
+        translit_map = {
+            # Игры
+            "Genshin Impact": "Гэньшин Импакт",
+            "Genshin": "Гэньшин",
+            "Impact": "Импакт",
+            "Blue Archive": "Блю Аркайв",
+            "Needy Girl Overdose": "Ниди Гёрл Овэрдоус",
+            "Zenless Zone Zero": "Зэнлесс Зоун Зиро",
+            "D.Va": "ДиВа",
+            "Raiden Shogun": "Райдэн Шогун",
+            
+            # Платформы
+            "Instagram": "Инстаграм",
+            "TikTok": "ТикТок",
+            "OnlyFans": "ОнлиФанс",
+            "YouTube": "Ютуб",
+            "Twitter": "Твиттер",
+            "Facebook": "Фейсбук",
+            "Twitch": "Твич",
+            "Discord": "Дискорд",
+            "Telegram": "Телеграм",
+            
+            # Слова
+            "cosplay": "косплэй",
+            "Cosplay": "Косплэй",
+            "online": "онлайн",
+            "stream": "стрим",
+            "Stream": "Стрим",
+            "anime": "аниме",
+            "Anime": "Аниме",
+            "manga": "манга",
+            "Manga": "Манга",
+            "kawaii": "кавайи",
+            "Kawaii": "Кавайи",
+            
+            # Имена брендов
+            "Epica": "Эпика",
+            "Kamelot": "Кэмелот",
+            "Nightwish": "Найтвиш",
+            "Rammstein": "Рамштайн",
+            
+            # Другое
+            "Online": "Онлайн",
+            "Only": "Онли",
+            "Fans": "Фанс",
         }
         
-        for eng, rus in proper_names.items():
+        for eng, rus in translit_map.items():
             text = text.replace(eng, rus)
-        
-        eng_words = {
-            'Potato': 'Потейто',
-            'potato': 'потейто',
-            'Ki': 'Ки',
-            'ki': 'ки',
-            'Chu': 'Чу',
-            'chu': 'чу',
-            'Mei': 'Мэй',
-            'mei': 'мэй',
-            'Hana': 'Хана',
-            'hana': 'хана',
-            'Bunny': 'Банни',
-            'bunny': 'банни',
-            'Simone': 'Симона',
-            'simone': 'симона',
-            'Epica': 'Эпика',
-            'epica': 'эпика',
-        }
-        
-        for eng, rus in eng_words.items():
-            text = text.replace(eng, rus)
-        
-        text = text.replace('«', '"').replace('»', '"')
-        text = re.sub(r'\b[a-zA-Z]\b', '', text)
-        text = re.sub(r'\s+', ' ', text).strip()
         
         return text
     
-    def _number_to_words(self, num):
-        """Преобразует число от 0 до 9999 в слова"""
-        if num == 0:
-            return "ноль"
+    def _select_model(self, text: str):
+        """
+        Выбирает модель в зависимости от языка текста
+        - Если есть русские буквы -> русская модель
+        - Если только латиница -> английская модель
+        """
+        cyrillic = any('а' <= char <= 'я' or 'А' <= char <= 'Я' or char == 'ё' or char == 'Ё' for char in text)
         
-        simple = {
-            1: "один", 2: "два", 3: "три", 4: "четыре", 5: "пять",
-            6: "шесть", 7: "семь", 8: "восемь", 9: "девять", 10: "десять",
-            11: "одиннадцать", 12: "двенадцать", 13: "тринадцать", 14: "четырнадцать",
-            15: "пятнадцать", 16: "шестнадцать", 17: "семнадцать", 18: "восемнадцать",
-            19: "девятнадцать"
-        }
-        
-        tens = {
-            20: "двадцать", 30: "тридцать", 40: "сорок", 50: "пятьдесят",
-            60: "шестьдесят", 70: "семьдесят", 80: "восемьдесят", 90: "девяносто"
-        }
-        
-        hundreds = {
-            100: "сто", 200: "двести", 300: "триста", 400: "четыреста",
-            500: "пятьсот", 600: "шестьсот", 700: "семьсот", 800: "восемьсот", 900: "девятьсот"
-        }
-        
-        thousands = {
-            1: "одна тысяча", 2: "две тысячи", 3: "три тысячи", 4: "четыре тысячи",
-            5: "пять тысяч", 6: "шесть тысяч", 7: "семь тысяч", 8: "восемь тысяч", 9: "девять тысяч"
-        }
-        
-        if num in simple:
-            return simple[num]
-        
-        if num < 100:
-            tens_num = (num // 10) * 10
-            units = num % 10
-            result = tens[tens_num]
-            if units > 0:
-                result += " " + simple[units]
-            return result
-        
-        if num < 1000:
-            hundreds_num = (num // 100) * 100
-            rest = num % 100
-            result = hundreds[hundreds_num]
-            if rest > 0:
-                result += " " + self._number_to_words(rest)
-            return result
-        
-        if num < 10000:
-            thousands_num = num // 1000
-            rest = num % 1000
-            
-            if thousands_num in thousands:
-                result = thousands[thousands_num]
-            else:
-                result = self._number_to_words(thousands_num) + " тысяч"
-            
-            if rest > 0:
-                result += " " + self._number_to_words(rest)
-            return result
-        
-        return str(num)
+        if cyrillic:
+            print(f"   🟢 Выбрана русская модель (есть кириллица)")
+            return self.model_ru, 'ru'
+        else:
+            print(f"   🔵 Выбрана английская модель (только латиница)")
+            return self.model_en, 'en'
     
-    def _replace_numbers(self, text):
-        """Заменяет все числа в тексте на слова"""
-        
-        special_cases = {
-            '20двадцать13': 'две тысячи тринадцать',
-            '20двадцать': 'двадцать',
-            '4пятьсот': 'четыреста',
-            'триста0': 'триста',
-            '3000': 'три тысячи',
-            '2500': 'две тысячи пятьсот',
-            '2000': 'две тысячи',
-            '1500': 'одна тысяча пятьсот',
-            '1000': 'одна тысяча',
-            '5000': 'пять тысяч',
-            '10': 'десять',
+    def _fix_russian_e(self, text: str) -> str:
+        """Заменяет 'е' на 'э' в русских словах"""
+        replacements = {
+            'тест': 'тэст', 'Тест': 'Тэст',
+            'теста': 'тэста', 'тесту': 'тэсту',
+            'тестом': 'тэстом', 'тесте': 'тэсте',
+            'тесты': 'тэсты', 'тестов': 'тэстов',
+            'тестовая': 'тэстовая', 'тестовое': 'тэстовое',
+            'тестовый': 'тэстовый', 'тестовые': 'тэстовые',
+            'косплей': 'косплэй', 'Косплей': 'Косплэй',
+            'косплея': 'косплэя', 'косплею': 'косплэю',
+            'косплеем': 'косплэем', 'косплее': 'косплэе',
+            'косплеер': 'косплэер', 'косплеера': 'косплэера',
+            'модель': 'модэль', 'Модель': 'Модэль',
+            'модели': 'модэли', 'моделью': 'модэлью',
+            'моделей': 'модэлей',
+            'тренд': 'трэнд', 'бренд': 'брэнд',
         }
+        result = text
+        for old, new in replacements.items():
+            result = result.replace(old, new)
+        return result
+    
+    def _fix_ending(self, text: str) -> str:
+        """Исправляет окончание фразы для предотвращения обрыва"""
+        if not text:
+            return text
         
-        for special, replacement in special_cases.items():
-            text = text.replace(special, replacement)
+        text = text.strip()
         
-        def replace_match(match):
-            num_str = match.group()
-            try:
-                num = int(num_str)
-                if 1 <= num <= 9999:
-                    return self._number_to_words(num)
-                return num_str
-            except:
-                return num_str
+        if self.add_final_punctuation:
+            if text and text[-1] not in '.!?;:':
+                text += '.'
         
-        pattern = r'\b\d{1,4}\b'
-        text = re.sub(pattern, replace_match, text)
-        
-        pattern_attached = r'(\d{1,4})([а-яА-ЯёЁ]+)'
-        text = re.sub(pattern_attached, lambda m: self._number_to_words(int(m.group(1))) + " " + m.group(2), text)
-        
-        pattern_mixed = r'([а-яА-ЯёЁ]+)(\d{1,4})'
-        text = re.sub(pattern_mixed, lambda m: m.group(1) + " " + self._number_to_words(int(m.group(2))), text)
+        if self.add_final_word:
+            text += " мм"
         
         return text
     
-    def _split_into_sentences(self, text):
+    def _add_silence_to_audio(self, audio: np.ndarray) -> np.ndarray:
+        """Добавляет буфер тишины в конец аудио"""
+        if not self.add_silence_buffer:
+            return audio
+        
+        silence_duration = self.silence_buffer_ms / 1000.0
+        silence_samples = int(self.sample_rate * silence_duration)
+        silence = np.zeros(silence_samples, dtype=audio.dtype)
+        
+        return np.concatenate([audio, silence])
+    
+    def _prepare_text(self, text: str) -> str:
+        """Подготовка текста: числа → слова"""
+        if not text:
+            return text
+        
+        if any('а' <= char <= 'я' for char in text.lower()):
+            num_words = {
+                '0': 'ноль', '1': 'один', '2': 'два', '3': 'три', '4': 'четыре',
+                '5': 'пять', '6': 'шесть', '7': 'семь', '8': 'восемь', '9': 'девять',
+                '10': 'десять', '100': 'сто', '1000': 'тысяча'
+            }
+            for num, word in num_words.items():
+                text = text.replace(num, word)
+        
+        return text
+    
+    def _split_into_sentences(self, text: str) -> list:
         """Разбивает текст на предложения"""
-        sentences = re.split(r'(?<=[.!?;:…])\s+', text)
+        sentences = re.split(r'(?<=[.!?;:])\s+', text)
         return [s.strip() for s in sentences if s.strip()]
     
-    def _split_into_chunks(self, text):
-        """Разбивает длинный текст на части по предложениям"""
-        if len(text) <= self.max_chunk_size:
-            return [text]
+    def _mark_question_center(self, text: str) -> str:
+        """Размечает вопросительные интонации (только для русского)"""
+        if '?' not in text or '*' in text:
+            return text
         
-        print(f"📖 Разбиваю длинный текст ({len(text)} символов) на части...")
+        words = text.replace('?', '').split()
+        if not words:
+            return text
         
-        sentences = self._split_into_sentences(text)
+        question_words = {'кто', 'что', 'где', 'когда', 'куда', 'откуда', 
+                          'почему', 'зачем', 'как', 'сколько', 'какой', 'чей'}
         
-        chunks = []
-        current_chunk = ""
+        if any(w.lower() in question_words for w in words):
+            return text
         
-        for sentence in sentences:
-            if len(current_chunk) + len(sentence) + 1 <= self.max_chunk_size:
-                current_chunk += sentence + " "
-            else:
-                if current_chunk:
-                    chunks.append(current_chunk.strip())
-                current_chunk = sentence + " "
+        excluded = question_words | {'и', 'в', 'на', 'с', 'по', 'у', 'к', 'от', 'до'}
         
-        if current_chunk:
-            chunks.append(current_chunk.strip())
+        for i, word in enumerate(reversed(words)):
+            clean = word.strip('.,!?')
+            if len(clean) > 2 and clean.lower() not in excluded:
+                words[-i-1] = f"*{clean}*"
+                break
         
-        print(f"📖 Текст разбит на {len(chunks)} частей")
-        return chunks
+        if not any('*' in w for w in words):
+            words[-1] = f"*{words[-1]}*"
+        
+        return ' '.join(words) + '?'
     
-    def generate_audio(self, text, voice="chuchu"):
-        """Генерирует аудио из текста"""
-        cfg = self.VOICE_CONFIG.get(voice, self.VOICE_CONFIG["chuchu"])
-        
-        try:
-            audio = self.model.apply_tts(
-                text=text,
-                speaker=cfg["speaker"],
-                sample_rate=self.sample_rate,
-                put_accent=True,
-                put_yo=True,
-                put_stress_homo=True,
-                put_yo_homo=True
-            )
-            return audio.cpu().numpy()
-        except Exception as e:
-            print(f"⚠️ Ошибка синтеза: {e}")
-            try:
-                shorter_text = text[:300] if len(text) > 300 else text
-                audio = self.model.apply_tts(
-                    text=shorter_text,
-                    speaker=cfg["speaker"],
-                    sample_rate=self.sample_rate
-                )
-                return audio.cpu().numpy()
-            except Exception as e2:
-                print(f"❌ Критическая ошибка синтеза: {e2}")
-                return np.zeros(16000)
-    
-    def save_to_wav(self, audio, filename):
-        """Сохраняет аудио в WAV файл"""
-        audio_int16 = (audio * 32767).astype(np.int16)
-        wav.write(filename, self.sample_rate, audio_int16)
-    
-    def play_audio(self, audio):
-        """Воспроизводит аудио через pygame"""
-        with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as f:
-            self.save_to_wav(audio, f.name)
-            temp_file = f.name
-        
-        pygame.mixer.music.load(temp_file)
-        pygame.mixer.music.play()
-        
-        while pygame.mixer.music.get_busy():
-            pygame.time.wait(10)
-        
-        try:
-            os.unlink(temp_file)
-        except:
-            pass
-    
-    async def speak(self, text, voice="chuchu"):
-        """Основной метод для озвучивания текста"""
+    async def speak(self, text: str, voice: str = None):
+        """Озвучивание текста с автоматическим выбором языка"""
         if not text or not text.strip():
             return
         
+        # 0. Транслитерация английских слов (перед определением языка)
         text = self._transliterate_english(text)
-        text = self._replace_numbers(text)
-        text = re.sub(r'[ \t]+', ' ', text).strip()
-        text = re.sub(r'([.!?;:])([А-Яа-я])', r'\1 \2', text)
         
-        chunks = self._split_into_chunks(text)
+        # 1. Подготовка текста
+        text = self._prepare_text(text)
         
-        if len(chunks) == 1:
-            print(f"🎤 {voice}: {chunks[0][:100]}...")
-            cache_key = f"{voice}:{chunks[0]}"
-            if cache_key not in self.audio_cache:
-                self.audio_cache[cache_key] = self.generate_audio(chunks[0], voice)
-            await asyncio.to_thread(self.play_audio, self.audio_cache[cache_key])
+        # 2. Определяем язык и выбираем модель
+        active_model, lang = self._select_model(text)
+        
+        # 3. Применяем русские обработки только для русского текста
+        if lang == 'ru':
+            text = self._fix_russian_e(text)
+            text = self._mark_question_center(text)
+            final_voice = voice if voice and voice != 'en_24' else 'xenia'
         else:
-            print(f"📖 Длинный рассказ ({len(chunks)} частей) от {voice}")
-            for i, chunk in enumerate(chunks):
-                print(f"  Часть {i+1}/{len(chunks)}: {chunk[:50]}...")
-                cache_key = f"{voice}:{chunk}"
-                if cache_key not in self.audio_cache:
-                    self.audio_cache[cache_key] = self.generate_audio(chunk, voice)
-                await asyncio.to_thread(self.play_audio, self.audio_cache[cache_key])
-                if i < len(chunks) - 1:
-                    await asyncio.sleep(self.chunk_pause)
+            final_voice = 'en_24'
+        
+        # 4. Разбиваем на предложения
+        sentences = self._split_into_sentences(text)
+        
+        for sentence in sentences:
+            if not sentence:
+                continue
+            
+            processed = self._fix_ending(sentence)
+            print(f"🔊 {final_voice}: {processed[:100]}...")
+            
+            try:
+                if lang == 'ru':
+                    audio = active_model.apply_tts(
+                        text=processed,
+                        speaker=final_voice,
+                        sample_rate=self.sample_rate,
+                        put_accent=self.put_accent,
+                        put_yo=self.put_yo,
+                        put_stress_homo=self.put_stress_homo,
+                        put_yo_homo=self.put_yo_homo,
+                        intensity=self.intensity
+                    )
+                else:
+                    audio = active_model.apply_tts(
+                        text=processed,
+                        speaker='en_24',
+                        sample_rate=self.sample_rate
+                    )
+                
+                audio_np = audio.cpu().numpy()
+                audio_np = self._add_silence_to_audio(audio_np)
+                
+                with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as f:
+                    audio_int16 = (audio_np * 32767).astype(np.int16)
+                    wav.write(f.name, self.sample_rate, audio_int16)
+                    temp_file = f.name
+                
+                pygame.mixer.music.load(temp_file)
+                pygame.mixer.music.play()
+                
+                while pygame.mixer.music.get_busy():
+                    await asyncio.sleep(0.05)
+                
+                for _ in range(3):
+                    try:
+                        os.unlink(temp_file)
+                        break
+                    except PermissionError:
+                        await asyncio.sleep(0.2)
+                        
+            except Exception as e:
+                logger.error(f"Ошибка TTS: {e}")
+            
+            await asyncio.sleep(0.1)
     
-    async def speak_story_alternating(self, story_text, voice1="chuchu", voice2="mei", pause_between=0.5):
-        """Рассказывает историю с чередованием голосов"""
-        if not story_text or not story_text.strip():
+    async def speak_chuchu(self, text: str):
+        """Чучу (русский голос xenia)"""
+        await self.speak(text, voice="xenia")
+    
+    async def speak_mei(self, text: str):
+        """Мэй (русский голос baya)"""
+        await self.speak(text, voice="baya")
+    
+    async def speak_english(self, text: str, voice: str = "en_24"):
+        """Английский текст (голос en_24 - подобран под xenia)"""
+        await self.speak(text, voice=voice)
+    
+    async def speak_duet(self, text: str, main_voice: str = "xenia"):
+        await self.speak(text, voice=main_voice)
+    
+    async def speak_story_alternating(self, story_text: str, voice1: str = "xenia",
+                                       voice2: str = "baya", pause_between: float = 0.5):
+        """Рассказ истории с чередованием голосов (только русский)"""
+        if not story_text:
             return
-        
-        print(f"📖 Начинаем дуэтный рассказ: {voice1} + {voice2}")
-        
-        story_text = self._transliterate_english(story_text)
-        story_text = self._replace_numbers(story_text)
-        story_text = re.sub(r'[ \t]+', ' ', story_text).strip()
         
         sentences = self._split_into_sentences(story_text)
         
         if len(sentences) < 2:
-            await self.speak(story_text, voice1)
+            await self.speak(story_text, voice=voice1)
             return
         
-        voice1_turns = []
-        voice2_turns = []
-        
-        for i in range(0, len(sentences), 4):
-            voice1_part = " ".join(sentences[i:i+2])
-            if voice1_part:
-                voice1_turns.append(voice1_part)
-            
-            voice2_part = " ".join(sentences[i+2:i+4])
-            if voice2_part:
-                voice2_turns.append(voice2_part)
-        
-        max_turns = max(len(voice1_turns), len(voice2_turns))
-        
-        for i in range(max_turns):
-            if i < len(voice1_turns):
-                print(f"🎤 {voice1}: {voice1_turns[i][:80]}...")
-                await self.speak(voice1_turns[i], voice1)
-                await asyncio.sleep(pause_between)
-            
-            if i < len(voice2_turns):
-                print(f"🎤 {voice2}: {voice2_turns[i][:80]}...")
-                await self.speak(voice2_turns[i], voice2)
-                if i < max_turns - 1:
-                    await asyncio.sleep(pause_between)
-        
-        print("📖 Рассказ завершён")
+        for i, sentence in enumerate(sentences):
+            voice = voice1 if i % 2 == 0 else voice2
+            await self.speak(sentence, voice=voice)
+            await asyncio.sleep(pause_between)
+
+
+# Упрощённая версия для обратной совместимости
+class SimpleSileroTTS:
+    def __init__(self):
+        self.tts = SileroTTS()
     
-    async def speak_duet(self, text, main_voice="chuchu"):
-        """Озвучивает реплику дуэтом"""
-        await self.speak(text, voice=main_voice)
+    async def speak(self, text: str, voice: str = "xenia"):
+        await self.tts.speak(text, voice=voice)
+    
+    async def speak_duet(self, text: str):
+        await self.tts.speak(text, voice="xenia")
+    
+    async def speak_story_alternating(self, story_text: str, voice1: str = "xenia",
+                                       voice2: str = "baya", pause_between: float = 0.5):
+        await self.tts.speak_story_alternating(story_text, voice1, voice2, pause_between)

@@ -1,0 +1,14 @@
+ollama
+pygame
+numpy
+opencv-python
+Pillow
+customtkinter
+speechrecognition
+pyttsx3
+pyaudio
+silero-tts
+torch
+scipy
+ruaccent
+speechbrain

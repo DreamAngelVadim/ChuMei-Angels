@@ -1,40 +1,30 @@
-# Environment
-.env
-venv/
-env/
-ENV/
-
-# Test files (might contain secrets)
-test_*.py
-*.test.py
-
 # Python
 __pycache__/
 *.py[cod]
-*$py.class
 *.so
 .Python
+*.log
+venv/
+env/
 
-# Audio/Video files
-*.mp3
-*.wav
-*.mp4
-*.avi
-# VRM files are now tracked via Git LFS
-output/
+# Проект
+chumei.log
+memory.json
+user_name.txt
+voice_sample.npy
+models/*.gguf
+tmp_speechbrain/
+
+# Видео (если большие)
+assets/video/*.mp4
+assets/video/*.avi
+
+# Сборки
+build/
+dist/
+*.spec
+*.exe
 
 # IDE
 .vscode/
 .idea/
-*.swp
-*.swo
-
-# OS
-.DS_Store
-Thumbs.db
-
-# Logs
-*.log
-logs/
-
-chat.txt
