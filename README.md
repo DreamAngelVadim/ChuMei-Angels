@@ -17,7 +17,7 @@
 -->
 
 <p align="center">
-  <img src="assets/icon.ico" width="128" height="128" alt="ChuMei Angels Logo">
+  <img src="assets/Asian.ico" width="128" height="128" alt="ChuMei Angels Logo">
 </p>
 
 <h1 align="center">🎀 ChuMei Angels</h1>
