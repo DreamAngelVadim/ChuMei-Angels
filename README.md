@@ -85,6 +85,17 @@
 
 ---
 
+## 👧 Персонажи
+
+| Имя | Возраст | Описание | Голос TTS |
+|-----|---------|----------|-----------|
+| **Чучу** | 18 лет | Японочка, косплей-модель, гравюр-идол. Игривая, нежная, кокетливая | xenia |
+| **Мэй** | 22 года | Вьетнамка, крафтерша. Спокойная, уверенная, говорит "ара-ара" | baya |
+| **Хана** | 20 лет | Хана Банни, косплеерша. Дружелюбная, открытая | xenia |
+| **Ки** | 18 лет | Стеснительный косплеер. Говорит тихо, краснеет | baya |
+| **Симона** | 24 года | Вокалистка Epica. Элегантная, спокойная | baya |
+
+---
 ## 🆕 Что нового
 
 ### Последнее обновление (Май 2026)
@@ -99,6 +110,55 @@
 
 ---
 
+🚀 Быстрый старт
+
+1. Клонирование репозитория
+
+git clone https://github.com/DreamAngelVadim/ChuMei-Angels.git
+cd ChuMei-Angels
+
+2. Установка зависимостей
+
+# Основные зависимости
+pip install customtkinter opencv-python pillow
+pip install torch torchaudio scipy omegaconf
+pip install ollama
+pip install speechrecognition pyaudio
+pip install pygame numpy
+pip install transliterate
+pip install ruaccent sentencepiece
+
+3. Создание видео для аватара (опционально)
+
+# Создайте простые видео-заглушки
+python -c "
+import cv2
+import numpy as np
+import os
+
+os.makedirs('assets/video', exist_ok=True)
+
+def create_video(path, color, text):
+    fps = 30; w, h = 400, 400
+    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+    out = cv2.VideoWriter(path, fourcc, fps, (w, h))
+    for i in range(fps * 5):
+        frame = np.zeros((h, w, 3), dtype=np.uint8)
+        frame[:] = color
+        cv2.putText(frame, text, (50, 200), cv2.FONT_HERSHEY_SIMPLEX, 1, (255,255,255), 2)
+        out.write(frame)
+    out.release()
+    print(f'✅ {path}')
+
+create_video('assets/video/idle.mp4', (100,100,200), 'ChuMei Angels')
+create_video('assets/video/talking.mp4', (200,100,100), 'Talking...')
+"
+
+4. Запуск
+
+python main.py
+
+---
 ## 📸 Скриншоты
 
 ### Главное окно
