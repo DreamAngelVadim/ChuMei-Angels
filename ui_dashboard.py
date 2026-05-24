@@ -165,7 +165,9 @@ class ChuMeiUI:
     # ═══════════════════════════════════════════════════════════════════════════
     
     def _setup_hotkeys(self):
-        """Настраивает горячие клавиши (привязка к полю ввода)"""
+        """Настраивает горячие клавиши для поля ввода"""
+        
+        # Привязываем события к полю ввода
         self.input_entry.bind("<Control-c>", self._copy_text)
         self.input_entry.bind("<Control-v>", self._paste_text)
         self.input_entry.bind("<Control-x>", self._cut_text)
@@ -173,12 +175,24 @@ class ChuMeiUI:
         self.input_entry.bind("<Control-z>", self._undo)
         self.input_entry.bind("<Control-y>", self._redo)
         self.input_entry.bind("<Return>", lambda e: self._send_message())
+        
+        # Для ПКМ (контекстное меню)
         self.input_entry.bind("<Button-3>", self._show_context_menu)
-        self.input_entry.bind("<KeyRelease>", lambda e: self._save_state())
+        
+        # Для отслеживания изменений
+        self.input_entry.bind("<KeyRelease>", self._save_state)
+        
+        # Дополнительно привязываем к корневому окну (для глобальных хоткеев)
+        self.root.bind("<Control-c>", lambda e: self._copy_text() if self.input_entry.focus_get() else None)
+        self.root.bind("<Control-v>", lambda e: self._paste_text() if self.input_entry.focus_get() else None)
+        self.root.bind("<Control-x>", lambda e: self._cut_text() if self.input_entry.focus_get() else None)
+        self.root.bind("<Control-a>", lambda e: self._select_all() if self.input_entry.focus_get() else None)
+        self.root.bind("<Control-z>", lambda e: self._undo() if self.input_entry.focus_get() else None)
+        self.root.bind("<Control-y>", lambda e: self._redo() if self.input_entry.focus_get() else None)
         
         print("✅ Горячие клавиши настроены")
     
-    def _save_state(self):
+    def _save_state(self, event=None):
         if hasattr(self, 'input_entry') and self.input_entry.winfo_exists():
             current = self.input_entry.get()
             if current != self.current_text:
@@ -201,6 +215,9 @@ class ChuMeiUI:
     
     def _paste_text(self, event=None):
         try:
+            # Принудительно устанавливаем фокус на поле ввода
+            self.input_entry.focus_set()
+            
             text = self.root.clipboard_get()
             if text:
                 self._save_state()
@@ -212,8 +229,8 @@ class ChuMeiUI:
                 self.input_entry.icursor(cursor + len(text))
                 self.current_text = new
                 print(f"📋 Вставлено: {text[:50]}...")
-        except:
-            pass
+        except Exception as e:
+            print(f"Ошибка вставки: {e}")
         return "break"
     
     def _cut_text(self, event=None):
@@ -445,19 +462,11 @@ class ChuMeiUI:
         ModernToolTip(exit_btn, "Закрыть приложение", title="✖ Выход")
     
     # ═══════════════════════════════════════════════════════════════════════════
-    # ДОБАВЛЕНИЕ СООБЩЕНИЯ В ЧАТ (ПОДДЕРЖИВАЕТ GIRL_ID)
+    # ДОБАВЛЕНИЕ СООБЩЕНИЯ В ЧАТ
     # ═══════════════════════════════════════════════════════════════════════════
     
     def add_chat_message(self, speaker, text, is_user=False, girl_id=None):
-        """
-        Добавляет сообщение в историю чата.
-        
-        Аргументы:
-            speaker (str): имя говорящего
-            text (str): текст сообщения
-            is_user (bool): True если от пользователя
-            girl_id (str): идентификатор девочки (пока не используется, зарезервировано)
-        """
+        """Добавляет сообщение в историю чата."""
         def _add():
             try:
                 timestamp = datetime.now().strftime("%H:%M:%S")
