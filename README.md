@@ -112,74 +112,11 @@
 
 📁 Структура проекта
 
-ChuMei-Angels/
-├── main.py                          # Главный файл приложения
-├── config.py                        # Конфигурация
-├── ui_dashboard.py                  # GUI интерфейс
-├── ai_brain.py                      # AI ответы через Ollama
-├── silero_tts.py                    # Голосовой синтез
-├── accent_helper.py                 # Ударения для TTS
-├── microphone_input.py              # Распознавание речи
-├── avatar_video.py                  # Видео-аватар
-├── memory.py                        # Система памяти
-├── photo_gallery.py                 # Фотоальбом
-├── custom_stress.py                 # Словарь ударений
-├── llama_service.py                 # Llama.cpp бэкенд
-├── link_chat.py                     # Уведомления о ссылках
-├── clipboard_helper.py              # Буфер обмена
-├── undo_history.py                  # Отмена действий
-├── voice_id.py                      # Идентификация по голосу
-├── voice_recorder.py                # Запись голоса
-├── whisper_handler.py               # Распознавание через Whisper
-├── punctuator.py                    # Пунктуация
-├── text_utils.py                    # Утилиты для текста
-├── transliterate.py                 # Транслитерация
-├── replacements.py                  # Замены для TTS
-├── Asian.ico                        # Иконка приложения
-├── user_name.txt                    # Сохранённое имя
-├── voice_sample.npy                 # Образец голоса
-├── memory.json                      # Файл памяти (создаётся)
-│
-├── knowledge/
-│   ├── dialogues.py                 # Случайные диалоги
-│   ├── chains.py                    # Сценарии-цепочки
-│   ├── story_arc.py                 # Полная история
-│   ├── cosplay.py                   # Косплей термины
-│   ├── music.py                     # Музыкальные знания
-│   ├── personality.py               # Характеры персонажей
-│   └── custom_stress.py             # Словарь ударений
-│
-├── assets/
-│   ├── video/
-│   │   ├── idle.mp4                 # Видео ожидания
-│   │   └── talking.mp4              # Видео речи
-│   ├── Avatars pic/
-│   │   ├── icon_chuchu.png
-│   │   ├── icon_mei.png
-│   │   ├── icon_hana.png
-│   │   ├── icon_ki.png
-│   │   └── icon_simone.png
-│   ├── girls/
-│   │   ├── chuchu/
-│   │   ├── mei/
-│   │   ├── hana/
-│   │   ├── ki/
-│   │   └── simone/
-│   └── Asian.ico
-│
-├── models/
-│   └── llama.gguf                   # Модель Llama 3.2 1B
-│
-├── images/
-│   ├── Pic 1.png
-│   ├── Pic 2.png
-│   └── Pic 3.png
-│
-├── res/
-│   └── banned_words.txt
-│
-└── utils/
-    └── __init__.py
+## 📁 Структура проекта
+
+<p align="center">
+  <img src="assets/structure.png" alt="Структура проекта ChuMei Angels">
+</p>
 
 ---
 🚀 Быстрый старт
