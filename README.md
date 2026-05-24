@@ -113,35 +113,74 @@
 📁 Структура проекта
 
 ChuMei-Angels/
-├── main.py                 # Главный файл приложения
-├── config.py               # Конфигурация (голоса, API ключи)
-├── ui_dashboard.py         # GUI интерфейс
-├── ai_brain.py             # AI ответы через Ollama
-├── silero_tts.py           # Голосовой синтез (русский + английский)
-├── accent_helper.py        # Ударения для TTS
-├── microphone_input.py     # Распознавание речи
-├── avatar_video.py         # Видео-аватар
-├── memory.py               # Система памяти
-├── photo_gallery.py        # Фотоальбом
-├── custom_stress.py        # Пользовательский словарь ударений
-├── llama_service.py        # Llama.cpp бэкенд
-├── knowledge/              # База знаний
-│   ├── dialogues.py        # Случайные диалоги
-│   ├── chains.py           # Сценарии-цепочки
-│   ├── story_arc.py        # Полная история
-│   ├── cosplay.py          # Косплей термины
-│   ├── music.py            # Музыкальные знания
-│   └── personality.py      # Характеры персонажей
-├── assets/                 # Ресурсы
-│   ├── video/              # Видео для аватара
-│   │   ├── idle.mp4
-│   │   └── talking.mp4
-│   ├── Avatars pic/        # Иконки для карточек
-│   ├── girls/              # Фото для галереи
-│   └── Asian.ico           # Иконка приложения
-├── models/                 # GGUF модели для llama.cpp
-│   └── llama.gguf          # Модель Llama 3.2 1B
-└── requirements.txt        # Зависимости
+│
+├── main.py                          # Главный файл приложения
+├── config.py                        # Конфигурация (голоса, API ключи)
+├── ui_dashboard.py                  # GUI интерфейс
+├── ai_brain.py                      # AI ответы через Ollama
+├── silero_tts.py                    # Голосовой синтез (русский + английский)
+├── accent_helper.py                 # Ударения для TTS
+├── microphone_input.py              # Распознавание речи
+├── avatar_video.py                  # Видео-аватар
+├── memory.py                        # Система памяти
+├── photo_gallery.py                 # Фотоальбом
+├── custom_stress.py                 # Пользовательский словарь ударений
+├── llama_service.py                 # Llama.cpp бэкенд
+├── link_chat.py                     # Уведомления о ссылках
+├── clipboard_helper.py              # Буфер обмена
+├── undo_history.py                  # Отмена действий
+├── voice_id.py                      # Идентификация по голосу
+├── voice_recorder.py                # Запись голоса
+├── whisper_handler.py               # Распознавание через Whisper
+├── punctuator.py                    # Пунктуация
+├── text_utils.py                    # Утилиты для текста
+├── transliterate.py                 # Транслитерация
+├── replacements.py                  # Замены для TTS
+├── Asian.ico                        # Иконка приложения
+├── user_name.txt                    # Сохранённое имя пользователя
+├── voice_sample.npy                 # Образец голоса
+├── memory.json                      # Файл памяти (создаётся автоматически)
+│
+├── knowledge/                       # База знаний
+│   ├── dialogues.py                 # Случайные диалоги
+│   ├── chains.py                    # Сценарии-цепочки
+│   ├── story_arc.py                 # Полная история
+│   ├── cosplay.py                   # Косплей термины
+│   ├── music.py                     # Музыкальные знания
+│   ├── personality.py               # Характеры персонажей
+│   └── custom_stress.py             # Словарь ударений
+│
+├── assets/                          # Ресурсы
+│   ├── video/                       # Видео для аватара
+│   │   ├── idle.mp4                 # Видео ожидания
+│   │   └── talking.mp4              # Видео речи
+│   ├── Avatars pic/                 # Иконки для карточек
+│   │   ├── icon_chuchu.png
+│   │   ├── icon_mei.png
+│   │   ├── icon_hana.png
+│   │   ├── icon_ki.png
+│   │   └── icon_simone.png
+│   ├── girls/                       # Фото для галереи
+│   │   ├── chuchu/
+│   │   ├── mei/
+│   │   ├── hana/
+│   │   ├── ki/
+│   │   └── simone/
+│   └── Asian.ico                    # Иконка приложения
+│
+├── models/                          # GGUF модели для llama.cpp
+│   └── llama.gguf                   # Модель Llama 3.2 1B (770 MB)
+│
+├── images/                          # Изображения для README
+│   ├── Pic 1.png
+│   ├── Pic 2.png
+│   └── Pic 3.png
+│
+├── res/                             # Ресурсы
+│   └── banned_words.txt             # Запрещённые слова
+│
+└── utils/                           # Вспомогательные модули
+    └── __init__.py
 
 ---
 🚀 Быстрый старт
