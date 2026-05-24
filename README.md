@@ -123,7 +123,13 @@
 - Квантование: Q8_0
 
 ---
+## 🔗 Ссылки
 
+- 📦 **Репозиторий:** [ChuMei Angels](https://github.com/DreamAngelVadim/ChuMei-Angels)
+- 🔊 **TTS:** [Silero Models](https://github.com/snakers4/silero-models)
+- 🧠 **LLM:** [Ollama](https://ollama.com) | [llama.cpp](https://github.com/ggerganov/llama.cpp)
+- 🎨 **UI:** [CustomTkinter](https://github.com/TomSchimansky/CustomTkinter)
+- 📚 **Статьи:** [Вопросы в Silero TTS](https://habr.com/ru/articles/1015942/) | [llama.cpp бэкенд](https://habr.com/ru/articles/1027934/)
 ---
 ## 📁 Структура проекта
 
