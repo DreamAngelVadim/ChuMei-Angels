@@ -115,7 +115,7 @@
 ## 📁 Структура проекта
 
 <p align="center">
-  <img src="assets/structure.png" alt="Структура проекта ChuMei Angels">
+  <img src="assets/carbon.png" alt="Структура проекта ChuMei Angels">
 </p>
 
 ---
