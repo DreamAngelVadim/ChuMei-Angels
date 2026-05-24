@@ -130,7 +130,7 @@
 - 🧠 **LLM:** [Ollama](https://ollama.com) | [llama.cpp](https://github.com/ggerganov/llama.cpp)
 - 🎨 **UI:** [CustomTkinter](https://github.com/TomSchimansky/CustomTkinter)
 - 📚 **Статьи:** [Вопросы в Silero TTS](https://habr.com/ru/articles/1015942/) | [llama.cpp бэкенд](https://habr.com/ru/articles/1027934/)
-- - **GGUF модели:** [Qwen2.5-0.5B](https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct-GGUF) | [Llama 3.2 1B](https://huggingface.co/bartowski/Llama-3.2-1B-Instruct-GGUF) | [Документация llama.cpp](https://github.com/ggerganov/llama.cpp)
+- 🧠 **GGUF модели:** [Qwen2.5-0.5B](https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct-GGUF) | [Llama 3.2 1B](https://huggingface.co/bartowski/Llama-3.2-1B-Instruct-GGUF) | [Документация llama.cpp](https://github.com/ggerganov/llama.cpp)
 ---
 ## 📁 Структура проекта
 
