@@ -113,18 +113,17 @@
 📁 Структура проекта
 
 ChuMei-Angels/
-│
 ├── main.py                          # Главный файл приложения
-├── config.py                        # Конфигурация (голоса, API ключи)
+├── config.py                        # Конфигурация
 ├── ui_dashboard.py                  # GUI интерфейс
 ├── ai_brain.py                      # AI ответы через Ollama
-├── silero_tts.py                    # Голосовой синтез (русский + английский)
+├── silero_tts.py                    # Голосовой синтез
 ├── accent_helper.py                 # Ударения для TTS
 ├── microphone_input.py              # Распознавание речи
 ├── avatar_video.py                  # Видео-аватар
 ├── memory.py                        # Система памяти
 ├── photo_gallery.py                 # Фотоальбом
-├── custom_stress.py                 # Пользовательский словарь ударений
+├── custom_stress.py                 # Словарь ударений
 ├── llama_service.py                 # Llama.cpp бэкенд
 ├── link_chat.py                     # Уведомления о ссылках
 ├── clipboard_helper.py              # Буфер обмена
@@ -137,11 +136,11 @@ ChuMei-Angels/
 ├── transliterate.py                 # Транслитерация
 ├── replacements.py                  # Замены для TTS
 ├── Asian.ico                        # Иконка приложения
-├── user_name.txt                    # Сохранённое имя пользователя
+├── user_name.txt                    # Сохранённое имя
 ├── voice_sample.npy                 # Образец голоса
-├── memory.json                      # Файл памяти (создаётся автоматически)
+├── memory.json                      # Файл памяти (создаётся)
 │
-├── knowledge/                       # База знаний
+├── knowledge/
 │   ├── dialogues.py                 # Случайные диалоги
 │   ├── chains.py                    # Сценарии-цепочки
 │   ├── story_arc.py                 # Полная история
@@ -150,36 +149,36 @@ ChuMei-Angels/
 │   ├── personality.py               # Характеры персонажей
 │   └── custom_stress.py             # Словарь ударений
 │
-├── assets/                          # Ресурсы
-│   ├── video/                       # Видео для аватара
+├── assets/
+│   ├── video/
 │   │   ├── idle.mp4                 # Видео ожидания
 │   │   └── talking.mp4              # Видео речи
-│   ├── Avatars pic/                 # Иконки для карточек
+│   ├── Avatars pic/
 │   │   ├── icon_chuchu.png
 │   │   ├── icon_mei.png
 │   │   ├── icon_hana.png
 │   │   ├── icon_ki.png
 │   │   └── icon_simone.png
-│   ├── girls/                       # Фото для галереи
+│   ├── girls/
 │   │   ├── chuchu/
 │   │   ├── mei/
 │   │   ├── hana/
 │   │   ├── ki/
 │   │   └── simone/
-│   └── Asian.ico                    # Иконка приложения
+│   └── Asian.ico
 │
-├── models/                          # GGUF модели для llama.cpp
-│   └── llama.gguf                   # Модель Llama 3.2 1B (770 MB)
+├── models/
+│   └── llama.gguf                   # Модель Llama 3.2 1B
 │
-├── images/                          # Изображения для README
+├── images/
 │   ├── Pic 1.png
 │   ├── Pic 2.png
 │   └── Pic 3.png
 │
-├── res/                             # Ресурсы
-│   └── banned_words.txt             # Запрещённые слова
+├── res/
+│   └── banned_words.txt
 │
-└── utils/                           # Вспомогательные модули
+└── utils/
     └── __init__.py
 
 ---
