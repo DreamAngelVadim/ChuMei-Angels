@@ -110,6 +110,21 @@
 
 ---
 
+## 🧠 Модели
+
+### TTS (озвучивание)
+- **Silero TTS v5** — русская модель синтеза речи
+- Голоса: xenia (Чучу), baya (Мэй)
+- Формат: PyTorch/ONNX
+
+### LLM (диалоги)
+- **Qwen2.5-0.5B** в формате GGUF
+- Запускается через llama.cpp (быстрый CPU-инференс)
+- Квантование: Q8_0
+
+---
+
+---
 ## 📁 Структура проекта
 
 <p align="center">
@@ -177,6 +192,14 @@ python main.py
 ### Диалоги в чате
 ![Карточки](images/Pic%203.png)
 
+
+## 🔗 Ссылки
+
+- 📦 **Репозиторий:** [ChuMei Angels](https://github.com/DreamAngelVadim/ChuMei-Angels)
+- 🔊 **TTS:** [Silero Models](https://github.com/snakers4/silero-models)
+- 🧠 **LLM:** [Ollama](https://ollama.com) | [llama.cpp](https://github.com/ggerganov/llama.cpp)
+- 🎨 **UI:** [CustomTkinter](https://github.com/TomSchimansky/CustomTkinter)
+- 📚 **Статьи:** [Вопросы в Silero TTS](https://habr.com/ru/articles/1015942/) | [llama.cpp бэкенд](https://habr.com/ru/articles/1027934/)
 
 ## 📦 Требования
 
