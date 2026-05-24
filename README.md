@@ -110,6 +110,40 @@
 
 ---
 
+📁 Структура проекта
+
+ChuMei-Angels/
+├── main.py                 # Главный файл приложения
+├── config.py               # Конфигурация (голоса, API ключи)
+├── ui_dashboard.py         # GUI интерфейс
+├── ai_brain.py             # AI ответы через Ollama
+├── silero_tts.py           # Голосовой синтез (русский + английский)
+├── accent_helper.py        # Ударения для TTS
+├── microphone_input.py     # Распознавание речи
+├── avatar_video.py         # Видео-аватар
+├── memory.py               # Система памяти
+├── photo_gallery.py        # Фотоальбом
+├── custom_stress.py        # Пользовательский словарь ударений
+├── llama_service.py        # Llama.cpp бэкенд
+├── knowledge/              # База знаний
+│   ├── dialogues.py        # Случайные диалоги
+│   ├── chains.py           # Сценарии-цепочки
+│   ├── story_arc.py        # Полная история
+│   ├── cosplay.py          # Косплей термины
+│   ├── music.py            # Музыкальные знания
+│   └── personality.py      # Характеры персонажей
+├── assets/                 # Ресурсы
+│   ├── video/              # Видео для аватара
+│   │   ├── idle.mp4
+│   │   └── talking.mp4
+│   ├── Avatars pic/        # Иконки для карточек
+│   ├── girls/              # Фото для галереи
+│   └── Asian.ico           # Иконка приложения
+├── models/                 # GGUF модели для llama.cpp
+│   └── llama.gguf          # Модель Llama 3.2 1B
+└── requirements.txt        # Зависимости
+
+---
 🚀 Быстрый старт
 
 1. Клонирование репозитория
